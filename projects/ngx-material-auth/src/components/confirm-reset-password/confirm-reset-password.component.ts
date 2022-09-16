@@ -157,7 +157,10 @@ export class NgxMatAuthConfirmResetPasswordComponent<
         ) {
             await this.router.navigate([this.routeIfResetTokenInvalid]);
             this.zone.run(() => {
-                this.dialog.open(NgxMatAuthErrorDialogComponent, { data: this.invalidResetTokenErrorData, autoFocus: false, restoreFocus: false });
+                this.dialog.open(
+                    NgxMatAuthErrorDialogComponent,
+                    { data: this.invalidResetTokenErrorData, autoFocus: false, restoreFocus: false }
+                );
             });
             return;
         }
