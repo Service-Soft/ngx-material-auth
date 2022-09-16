@@ -1,0 +1,12 @@
+<div class="center">
+    <ngx-mat-auth-login></ngx-mat-auth-login>
+</div>
+
+<div class="login-buttons-row">
+    <button style="margin-right: 10px;" mat-raised-button (click)="login('1')">Login as User #1</button>
+    <button mat-raised-button (click)="login('2')">Login as User #2</button>
+</div>
+
+<div class="logout-button-row">
+    <button [disabled]="!authService.authData" mat-raised-button (click)="logout()">Logout</button>
+</div>

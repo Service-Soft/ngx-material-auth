@@ -1,0 +1,6 @@
+<h1 mat-dialog-title>{{error.name}}</h1>
+<div class="error-message" [innerHtml]="error.message" mat-dialog-content>
+</div>
+<div class="dialog-actions" mat-dialog-actions>
+    <button mat-raised-button (click)="close()">Ok</button>
+</div>

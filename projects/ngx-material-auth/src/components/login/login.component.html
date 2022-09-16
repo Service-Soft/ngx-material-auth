@@ -1,0 +1,38 @@
+<div class="mat-elevation-z8 login-box">
+    <i class="title-icon fas fa-circle-user"></i>
+    <h1>{{loginTitle}}</h1>
+
+    <form #formControl="ngForm" (ngSubmit)="onSubmit()">
+        <mat-form-field>
+            <mat-label>{{emailInputLabel}}</mat-label>
+            <input matInput [(ngModel)]="email" name="email" #mail="ngModel" required email>
+            <mat-error>{{getValidationErrorMessage(mail)}}</mat-error>
+        </mat-form-field>
+        <br>
+        <mat-form-field>
+            <mat-label>{{passwordInputLabel}}</mat-label>
+            <input
+                [type]="hide ? 'password' : 'text'"
+                matInput
+                [(ngModel)]="password"
+                name="password"
+                #pw="ngModel"
+                required>
+            <button (click)="hide = !hide" mat-icon-button matSuffix>
+                <i *ngIf="hide" class="fas fa-eye-slash"></i>
+                <i *ngIf="!hide" class="fas fa-eye"></i>
+            </button>
+            <mat-error>{{getValidationErrorMessage(pw)}}</mat-error>
+        </mat-form-field>
+
+        <br>
+
+        <button class="login-button" mat-raised-button [disabled]="formControl.invalid">
+            {{loginButtonLabel}}
+        </button>
+        <br>
+        <div class="forgot-password-link-container">
+            <a [routerLink]="forgotPasswordLinkData.route">{{forgotPasswordLinkData.displayName}}</a>
+        </div>
+    </form>
+</div>

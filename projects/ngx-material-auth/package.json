@@ -1,0 +1,25 @@
+{
+    "name": "ngx-material-auth",
+    "version": "0.0.1",
+    "license": "MIT",
+    "keywords": [
+        "angular",
+        "material",
+        "authentication",
+        "authorization",
+        "login",
+        "jwt"
+    ],
+    "peerDependencies": {
+        "@angular/animations": "~14.2.1",
+        "@angular/cdk": "^14.2.1",
+        "@angular/common": "~14.2.1",
+        "@angular/core": "~14.2.1",
+        "@angular/forms": "~14.2.1",
+        "@angular/material": "^14.2.1",
+        "bootstrap": "^5.2.1",
+        "rxjs": "~7.5.6",
+        "tslib": "^2.4.0",
+        "zone.js": "~0.11.8"
+    }
+}
