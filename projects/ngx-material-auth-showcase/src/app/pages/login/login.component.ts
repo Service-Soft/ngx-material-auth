@@ -1,6 +1,5 @@
 /* eslint-disable jsdoc/require-jsdoc */
-import { Component, Inject } from '@angular/core';
-import { NGX_AUTH_SERVICE } from 'ngx-material-auth';
+import { Component } from '@angular/core';
 import { CustomAuthData, CustomAuthService } from '../../services/custom-auth.service';
 
 type UserIds = '1' | '2';
