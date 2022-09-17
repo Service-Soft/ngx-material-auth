@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseToken } from '../../models/base-token.model';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../../services/jwt-auth.service';
-import { getValidationErrorMessage } from '../get-validation-error-message.function';
+import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-message.function';
 
 /**
  * The data for the forgot password link in the login component.
@@ -113,11 +113,13 @@ export class NgxMatAuthLoginComponent<
     constructor(
         @Inject(NGX_AUTH_SERVICE)
         protected readonly authService: AuthServiceType,
+        @Inject(NGX_GET_VALIDATION_ERROR_MESSAGE)
+        protected readonly defaultGetValidationErrorMessage: (model: NgModel) => string,
         protected readonly router: Router
     ) { }
 
     ngOnInit(): void {
-        this.getValidationErrorMessage = this.getValidationErrorMessage ?? getValidationErrorMessage;
+        this.getValidationErrorMessage = this.getValidationErrorMessage ?? this.defaultGetValidationErrorMessage;
         this.loginTitle = this.loginTitle ?? 'Login';
         this.emailInputLabel = this.emailInputLabel ?? 'Email';
         this.passwordInputLabel = this.passwordInputLabel ?? 'Password';
