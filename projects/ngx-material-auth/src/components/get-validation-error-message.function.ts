@@ -1,4 +1,10 @@
+import { InjectionToken } from '@angular/core';
 import { NgModel } from '@angular/forms';
+
+export const NGX_GET_VALIDATION_ERROR_MESSAGE = new InjectionToken('Provider for the default getValidationErrorMessage.', {
+    providedIn: 'root',
+    factory: () => getValidationErrorMessage,
+});
 
 /**
  * Generates a default error message for most validation errors.

@@ -8,7 +8,7 @@ import { BaseToken } from '../../models/base-token.model';
 import { ErrorData } from '../../models/error-data.model';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../../services/jwt-auth.service';
 import { NgxMatAuthErrorDialogComponent } from '../error-dialog/error-dialog.component';
-import { getValidationErrorMessage } from '../get-validation-error-message.function';
+import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-message.function';
 
 /**
  * The interface for the confirm reset password functionality.
@@ -142,6 +142,8 @@ export class NgxMatAuthConfirmResetPasswordComponent<
     constructor(
         @Inject(NGX_AUTH_SERVICE)
         protected readonly authService: AuthServiceType,
+        @Inject(NGX_GET_VALIDATION_ERROR_MESSAGE)
+        protected readonly defaultGetValidationErrorMessage: (model: NgModel) => string,
         protected readonly router: Router,
         protected readonly route: ActivatedRoute,
         protected readonly zone: NgZone,
@@ -167,7 +169,7 @@ export class NgxMatAuthConfirmResetPasswordComponent<
     }
 
     private initDefaultValues(): void {
-        this.getValidationErrorMessage = this.getValidationErrorMessage ?? getValidationErrorMessage;
+        this.getValidationErrorMessage = this.getValidationErrorMessage ?? this.defaultGetValidationErrorMessage;
         this.confirmResetPasswordTitle = this.confirmResetPasswordTitle ?? 'New Password';
         this.passwordInputLabel = this.passwordInputLabel ?? 'Password';
         this.confirmPasswordInputLabel = this.confirmPasswordInputLabel ?? 'Confirm Password';
