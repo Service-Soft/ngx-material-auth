@@ -1,6 +1,6 @@
 {
     "name": "ngx-material-auth",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "license": "MIT",
     "keywords": [
         "angular",
@@ -11,15 +11,14 @@
         "jwt"
     ],
     "peerDependencies": {
-        "@angular/animations": "~14.2.1",
-        "@angular/cdk": "^14.2.1",
-        "@angular/common": "~14.2.1",
-        "@angular/core": "~14.2.1",
-        "@angular/forms": "~14.2.1",
-        "@angular/material": "^14.2.1",
-        "bootstrap": "^5.2.1",
-        "rxjs": "~7.5.6",
-        "tslib": "^2.4.0",
-        "zone.js": "~0.11.8"
+        "@angular/animations": "14",
+        "@angular/cdk": "14",
+        "@angular/common": "14",
+        "@angular/core": "14",
+        "@angular/forms": "14",
+        "@angular/material": "14"
+    },
+    "dependencies": {
+        "tslib": "^2.4.0"
     }
 }
