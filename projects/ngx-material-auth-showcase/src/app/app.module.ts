@@ -6,7 +6,7 @@ import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { CustomAuthService } from './services/custom-auth.service';
-import { HttpErrorInterceptor, JwtInterceptor, NGX_AUTH_SERVICE } from 'ngx-material-auth';
+import { HttpErrorInterceptor, JwtInterceptor, NGX_AUTH_SERVICE, NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS } from 'ngx-material-auth';
 import { NgxMatNavigationNavbarModule, NgxMatNavigationFooterModule } from 'ngx-material-navigation';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -29,6 +29,10 @@ import { MatDialogModule } from '@angular/material/dialog';
         {
             provide: NGX_AUTH_SERVICE,
             useExisting: CustomAuthService
+        },
+        {
+            provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS,
+            useValue: ['localhost']
         },
         {
             provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true

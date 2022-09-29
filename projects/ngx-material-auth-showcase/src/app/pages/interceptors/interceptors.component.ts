@@ -22,4 +22,12 @@ export class InterceptorsComponent {
     async produce401Error(): Promise<void> {
         await firstValueFrom(this.http.get(`${environment.apiUrl}/throw-401`));
     }
+
+    async sendRequestWithJwt(): Promise<void> {
+        await firstValueFrom(this.http.get(`${environment.apiUrl}/request-with-jwt`));
+    }
+
+    async sendRequestWithoutJwt(): Promise<void> {
+        await firstValueFrom(this.http.get('http://www.google.de/request-without-jwt'));
+    }
 }

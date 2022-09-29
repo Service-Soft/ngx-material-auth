@@ -39,11 +39,11 @@ Great Bug Reports tend to have:
 # Folder structure of the project
 The project contains an simple api for testing inside the files `api-data.ts` and `api.ts`.
 <br>
-The main projects are the library itself which will be published to npm and an showcase project used for trying things out. They can be found inside the `project/ngx-material-entity` and `projects/ngx-material-entity-showcase` directories
+The main projects are the library itself which will be published to npm and an showcase project used for trying things out. They can be found inside the `project/ngx-material-auth` and `projects/ngx-material-auth-showcase` directories
 
 # Starting the project
 1. Run `npm install` in the root directory,
-2. Run `npm install` in the project/ngx-material-entity directory
+2. Run `npm install` in the project/ngx-material-auth directory
 3. Run `npm run stack` in the root directory. This will start the api, the build-process of the library aswell as the showcase project all in watch-mode (hot reload). That's it! You will probably only ever need this single command.
 > :information_source: About package.json
 > <br>
@@ -68,11 +68,11 @@ That way the components can be highly customizable without requiring the user to
 
 ## Naming conventions
 
-All angular components / modules inside the library(projects/ngx-material-entity) should be named "`NgxMatEntity`MyGreatComponentOrModule".
+All angular components / modules inside the library(projects/ngx-material-auth) should be named "`NgxMatAuth`MyGreatComponentOrModule".
 
 Their selector should follow the same logic:
 <br>
-"`ngx-mat-entity`-my-great-component-or-module"
+"`ngx-mat-auth`-my-great-component-or-module"
 
 In the folder structure however, you are encouraged to leave the prefix out, because the user will never see this anyway.
 
