@@ -340,17 +340,23 @@ export interface BaseAuthData<Token extends BaseToken> {
 This can be used straight out of the box if you have [registered your authService](#override-the-injection-token).
 
 This interceptor automatically adds the token from your AuthService to the authorization http header of every request (If a token exists).
+You can (and should) provide a list of allowed domains to prohibit accidentaly sending tokens to a third party api.
 
 It also handles the refreshing of your token if it going to run out. By default starting at 6 hours before the token expirationDate.
 ## Usage
 Add this to your app.module.ts:
 ```typescript
+import { NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS } from 'ngx-material-auth';
 ...
 providers: [
     ...
     {
         provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true
-    }
+    },
+    {
+        // This is optional but highly recommended.
+        provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS, useValue: ['localhost', 'my-great-domain.com']
+    },
     ...
 ]
 ...
@@ -376,8 +382,12 @@ export class JwtInterceptor<
 
     constructor(
         @Inject(NGX_AUTH_SERVICE)
-        private readonly authService: AuthServiceType
-    ) { }
+        protected readonly authService: AuthServiceType,
+        @Inject(NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS)
+        protected readonly allowedDomains?: string[]
+    ) {
+        this.allowedDomains = this.allowedDomains?.map(ad => this.getDomainFromUrl(ad));
+    }
 
     /**
      * The main method used by angular to intercept any http-requests and append the jwt.
@@ -392,6 +402,9 @@ export class JwtInterceptor<
         }
         if (this.tokenNeedsToBeRefreshed()) {
             void this.authService.refreshToken();
+        }
+        if (!this.requestIsToAllowedDomain(request)) {
+            return next.handle(request);
         }
         request = request.clone({
             setHeaders: {
@@ -411,6 +424,44 @@ export class JwtInterceptor<
         const expirationInMs: number = tokenExpirationDate.getTime();
         return (expirationInMs - Date.now()) <= this.MAXIMUM_MS_BEFORE_EXPIRATION_FOR_REFRESH;
     }
+
+    /**
+     * Checks if the request is to an allowed domain.
+     *
+     * @param request - The request to check.
+     * @returns Whether the request is to an allowed domain or not. Defaults to true if no allowed host names were provided.
+     */
+    protected requestIsToAllowedDomain(request: HttpRequest<unknown>): boolean {
+        if (!this.allowedDomains) {
+            return true;
+        }
+        const domain = this.getDomainFromUrl(request.url);
+        if (this.allowedDomains.includes(domain)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Gets a normalized domain from an url.
+     * Is used for comparing the request url with the allowed domains array.
+     *
+     * @param url - The url to get the domain from.
+     * @returns The domain of the url.
+     */
+    protected getDomainFromUrl(url: string): string {
+        if (url.startsWith('https://')) {
+            url = url.split('https://')[1];
+        }
+        if (url.startsWith('http://')) {
+            url = url.split('http://')[1];
+        }
+        if (url.startsWith('www.')) {
+            url = url.split('www.')[1];
+        }
+        url = url.split('/')[0];
+        return url;
+    }
 }
 ```
 
@@ -420,10 +471,6 @@ This can be used straight out of the box if you have [registered your authServic
 This interceptor catches any error that comes from http and displays it inside of an dialog.
 
 If the error has a specific status code (eg. 401 Unauthorized) the current user is logged out.
-
-> :warning:
-> <br>
-> This does not handle CORS-Errors as these come directly from the browser.
 
 ## Usage
 Add this to your app.module.ts:
@@ -441,7 +488,7 @@ providers: [
 ## Api
 ```typescript
 /**
- * Interceptor that does error handling for every error that isn't treated locally.
+ * Interceptor that does error handling for http requests.
  */
 @Injectable({ providedIn: 'root' })
 export class HttpErrorInterceptor<
@@ -454,6 +501,16 @@ export class HttpErrorInterceptor<
      * The route to which the user gets redirected to after he triggers an error which should log him out (eg. 401 Unauthorized).
      */
     protected readonly ROUTE_AFTER_LOGOUT = '/';
+
+    /**
+     * The message to display when the user has no internet connection.
+     */
+    protected readonly NO_INTERNET_CONNECTION_ERROR_MESSAGE = 'No Internet Connection.<br>Please try again later.';
+
+    /**
+     * The message to display when an error with CORS occurs.
+     */
+    protected readonly CORS_ERROR_MESSAGE = 'CORS Error<br>Check your console for more information.';
 
     /**
      * All error codes for which the user should be logged out.
@@ -494,7 +551,7 @@ export class HttpErrorInterceptor<
                 }
                 if (this.errorDialogShouldBeDisplayed(error, request)) {
                     const errorData: ErrorData = { name: 'HTTP-Error', message: this.getErrorDataMessage(error) };
-                    this.dialog.open(ErrorDialogComponent, { data: errorData, autoFocus: false, restoreFocus: false });
+                    this.dialog.open(NgxMatAuthErrorDialogComponent, { data: errorData, autoFocus: false, restoreFocus: false });
                 }
                 return throwError(() => error);
             })
@@ -547,7 +604,25 @@ export class HttpErrorInterceptor<
         if (error.message) {
             return error.message;
         }
+        if (this.isCORSError(error)) {
+            if (!window.navigator.onLine) {
+                return this.NO_INTERNET_CONNECTION_ERROR_MESSAGE;
+            }
+            return this.CORS_ERROR_MESSAGE;
+        }
         return JSON.stringify(error);
+    }
+
+    /**
+     * Checks if the provided error has something to do with CORS.
+     *
+     * @param error - The error to check.
+     * @returns Whether or not the provided error has something to do with CORS.
+     */
+    protected isCORSError(error: HttpErrorResponse): boolean {
+        const stringifiedError = JSON.stringify(error);
+        return stringifiedError === JSON.stringify({ isTrusted: true })
+            || stringifiedError === JSON.stringify({ isTrusted: false });
     }
 }
 ```
