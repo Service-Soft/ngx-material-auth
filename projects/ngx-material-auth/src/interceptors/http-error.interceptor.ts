@@ -10,7 +10,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { Inject, Injectable } from '@angular/core';
 
 /**
- * Interceptor that does error handling for every error that isn't treated locally.
+ * Interceptor that does error handling for http requests.
  */
 @Injectable({ providedIn: 'root' })
 export class HttpErrorInterceptor<
@@ -23,6 +23,16 @@ export class HttpErrorInterceptor<
      * The route to which the user gets redirected to after he triggers an error which should log him out (eg. 401 Unauthorized).
      */
     protected readonly ROUTE_AFTER_LOGOUT = '/';
+
+    /**
+     * The message to display when the user has no internet connection.
+     */
+    protected readonly NO_INTERNET_CONNECTION_ERROR_MESSAGE = 'No Internet Connection.<br>Please try again later.';
+
+    /**
+     * The message to display when an error with CORS occurs.
+     */
+    protected readonly CORS_ERROR_MESSAGE = 'CORS Error<br>Check your console for more information.';
 
     /**
      * All error codes for which the user should be logged out.
@@ -116,6 +126,24 @@ export class HttpErrorInterceptor<
         if (error.message) {
             return error.message;
         }
+        if (this.isCORSError(error)) {
+            if (!window.navigator.onLine) {
+                return this.NO_INTERNET_CONNECTION_ERROR_MESSAGE;
+            }
+            return this.CORS_ERROR_MESSAGE;
+        }
         return JSON.stringify(error);
+    }
+
+    /**
+     * Checks if the provided error has something to do with CORS.
+     *
+     * @param error - The error to check.
+     * @returns Whether or not the provided error has something to do with CORS.
+     */
+    protected isCORSError(error: HttpErrorResponse): boolean {
+        const stringifiedError = JSON.stringify(error);
+        return stringifiedError === JSON.stringify({ isTrusted: true })
+            || stringifiedError === JSON.stringify({ isTrusted: false });
     }
 }
