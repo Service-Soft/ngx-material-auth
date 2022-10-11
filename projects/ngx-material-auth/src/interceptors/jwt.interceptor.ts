@@ -1,11 +1,10 @@
 import { HttpInterceptor, HttpEvent, HttpHandler, HttpRequest } from '@angular/common/http';
 import { Inject, Injectable, InjectionToken } from '@angular/core';
-import { Observable } from 'rxjs';
+import { from, lastValueFrom, Observable } from 'rxjs';
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseToken } from '../models/base-token.model';
+import { BaseRole } from '../models/base-role.model';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../services/jwt-auth.service';
-
-const SIX_HOURS_IN_MS = 21600000;
 
 export const NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS = new InjectionToken<string[] | void>(
     'Used to define domains to which an jwt token should be added. This should be used to not send tokens e.g. to third party apis.',
@@ -27,16 +26,12 @@ export const NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS = new InjectionToken<string[] |
  */
 @Injectable({ providedIn: 'root' })
 export class JwtInterceptor<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements HttpInterceptor {
-
-    /**
-     * The maximum amount of milliseconds before the expiration date to refresh the token.
-     * If the token still has more time than this left, it will not get refreshed.
-     */
-    protected readonly MAXIMUM_MS_BEFORE_EXPIRATION_FOR_REFRESH: number = SIX_HOURS_IN_MS;
 
     constructor(
         @Inject(NGX_AUTH_SERVICE)
@@ -55,21 +50,56 @@ export class JwtInterceptor<
      * @returns An Observable that is used by angular in the intercept chain.
      */
     intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-        if (!this.authService.authData?.token) {
+        if (this.refreshTokenExpired()) {
+            this.authService.authData = undefined;
+        }
+        if (!this.authService.authData?.accessToken) {
+            return next.handle(request);
+        }
+        if (this.requestIsToDisallowedDomain(request)) {
+            return next.handle(request);
+        }
+        if (this.requestDoesNotRequireToken(request)) {
             return next.handle(request);
         }
         if (this.tokenNeedsToBeRefreshed()) {
-            void this.authService.refreshToken();
-        }
-        if (!this.requestIsToAllowedDomain(request)) {
-            return next.handle(request);
+            return from(this.refreshAndHandle(request, next));
         }
         request = request.clone({
             setHeaders: {
-                authorization: `Bearer ${this.authService.authData.token.value}`
+                authorization: `Bearer ${this.authService.authData.accessToken.value}`
             }
         });
         return next.handle(request);
+    }
+
+    /**
+     * Check if the intercepted request is one of the special cases where no token is required.
+     * By default these are the refresh and the logout request.
+     *
+     * @param request - The http-request that was intercepted.
+     * @returns Whether or not the intercepted request is one of the special cases where no token is required.
+     */
+    protected requestDoesNotRequireToken(request: HttpRequest<unknown>): boolean {
+        return request.url === this.authService.API_REFRESH_TOKEN_URL
+            || request.url === this.authService.API_LOGOUT_URL;
+    }
+
+    /**
+     * Refreshes the token synchronous and sends the request afterwards.
+     *
+     * @param request - The http-request that was intercepted.
+     * @param next - The next http-handler in angular's chain.
+     * @returns A promise of an unknown HttpEvent. Inside the interceptor you need to call "return from(this.refreshAndHandle(...))".
+     */
+    protected async refreshAndHandle(request: HttpRequest<unknown>, next: HttpHandler): Promise<HttpEvent<unknown>> {
+        await this.authService.refreshToken();
+        request = request.clone({
+            setHeaders: {
+                authorization: `Bearer ${this.authService.authData?.accessToken.value}`
+            }
+        });
+        return await lastValueFrom(next.handle(request));
     }
 
     /**
@@ -78,9 +108,20 @@ export class JwtInterceptor<
      * @returns Whether or not the token needs to be refreshed.
      */
     protected tokenNeedsToBeRefreshed(): boolean {
-        const tokenExpirationDate: Date = new Date(this.authService.authData?.token.expirationDate as Date);
+        const tokenExpirationDate: Date = new Date(this.authService.authData?.accessToken.expirationDate as Date);
         const expirationInMs: number = tokenExpirationDate.getTime();
-        return (expirationInMs - Date.now()) <= this.MAXIMUM_MS_BEFORE_EXPIRATION_FOR_REFRESH;
+        return expirationInMs <= Date.now();
+    }
+
+    /**
+     * Checks whether or not the refresh token is expired.
+     *
+     * @returns Whether or not the refresh token is expired.
+     */
+    protected refreshTokenExpired(): boolean {
+        const tokenExpirationDate: Date = new Date(this.authService.authData?.refreshToken.expirationDate as Date);
+        const expirationInMs: number = tokenExpirationDate.getTime();
+        return expirationInMs <= Date.now();
     }
 
     /**
@@ -89,15 +130,15 @@ export class JwtInterceptor<
      * @param request - The request to check.
      * @returns Whether the request is to an allowed domain or not. Defaults to true if no allowed host names were provided.
      */
-    protected requestIsToAllowedDomain(request: HttpRequest<unknown>): boolean {
+    protected requestIsToDisallowedDomain(request: HttpRequest<unknown>): boolean {
         if (!this.allowedDomains) {
-            return true;
+            return false;
         }
         const domain = this.getDomainFromUrl(request.url);
         if (this.allowedDomains.includes(domain)) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     /**

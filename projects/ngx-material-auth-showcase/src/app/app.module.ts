@@ -32,7 +32,7 @@ import { MatDialogModule } from '@angular/material/dialog';
         },
         {
             provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS,
-            useValue: ['localhost']
+            useValue: ['localhost:3000']
         },
         {
             provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true

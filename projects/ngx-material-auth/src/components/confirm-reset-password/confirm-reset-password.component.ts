@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseToken } from '../../models/base-token.model';
 import { ErrorData } from '../../models/error-data.model';
+import { BaseRole } from '../../models/base-role.model';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../../services/jwt-auth.service';
 import { NgxMatAuthErrorDialogComponent } from '../error-dialog/error-dialog.component';
 import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-message.function';
@@ -25,9 +26,11 @@ import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-messag
     styleUrls: ['./confirm-reset-password.component.scss']
 })
 export class NgxMatAuthConfirmResetPasswordComponent<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements OnInit {
 
     /**

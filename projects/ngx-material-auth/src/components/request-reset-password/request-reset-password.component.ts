@@ -3,11 +3,12 @@ import { NgModel } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseToken } from '../../models/base-token.model';
+import { BaseRole } from '../../models/base-role.model';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../../services/jwt-auth.service';
 import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-message.function';
 
 /**
- * The interface for the request reset password functionality.
+ * A simple request reset password box.
  */
 @Component({
     selector: 'ngx-mat-auth-request-reset-password',
@@ -15,9 +16,11 @@ import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-messag
     styleUrls: ['./request-reset-password.component.scss']
 })
 export class NgxMatAuthRequestResetPasswordComponent<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements OnInit {
 
     /**
