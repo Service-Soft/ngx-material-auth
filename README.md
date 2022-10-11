@@ -18,6 +18,7 @@ This includes:
     - [JwtAuthService](#jwtauthservice-1)
     - [BaseToken](#basetoken)
     - [BaseAuthData](#baseauthdata)
+    - [BaseRole](#baserole)
 - [Jwt Interceptor](#jwt-interceptor)
   - [Usage](#usage-1)
   - [Api](#api-1)
@@ -72,8 +73,9 @@ In order to use it you need to extend your own service from it and register it i
 import { BaseAuthData, BaseToken, JwtAuthService } from 'ngx-material-auth';
 
 @Injectable({ providedIn: 'root' })                  // ↓ Can be customized ↓
-export class CustomAuthService extends JwtAuthService<BaseAuthData, BaseToken> {
+export class CustomAuthService extends JwtAuthService<BaseAuthData, CustomRoleValues, CustomRole<CustomRoleValues>, CustomToken> {
     readonly API_LOGIN_URL: string = `${environment.apiUrl}/login`;
+    readonly API_LOGOUT_URL: string = `${environment.apiUrl}/logout`;
     readonly API_REFRESH_TOKEN_URL: string = `${environment.apiUrl}/refresh-token`;
     readonly API_REQUEST_RESET_PASSWORD_URL: string = `${environment.apiUrl}/request-reset-password`;
     readonly API_CONFIRM_RESET_PASSWORD_URL: string = `${environment.apiUrl}/confirm-reset-password`;
@@ -117,10 +119,11 @@ That's it! Now you are ready to use all the parts NgxMaterialAuth has to offer:
  * The base class for an authentication service.
  */
 export abstract class JwtAuthService<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
     TokenType extends BaseToken
 > {
-
     /**
      * The subject of the currently stored authData.
      */
@@ -132,11 +135,18 @@ export abstract class JwtAuthService<
     readonly AUTH_DATA_KEY = 'authData';
 
     /**
-     * The duration of the token in milliseconds.
+     * The duration of the access token in milliseconds.
      *
-     * @default 86400000 // 1 day
+     * @default 3600000 // 1 hour
      */
-    readonly TOKEN_DURATION_IN_MS: number = DAY_IN_MS;
+    readonly ACCESS_TOKEN_DURATION_IN_MS: number = HOUR_IN_MS;
+
+    /**
+     * The duration of the refresh token in milliseconds.
+     *
+     * @default 8640000000 // 100 days
+     */
+    readonly REFRESH_TOKEN_DURATION_IN_MS: number = ONE_HUNDRED_DAYS_IN_MS;
 
     /**
      * The message to display inside a snackbar when the mail for resetting a password was sent successfully.
@@ -149,23 +159,32 @@ export abstract class JwtAuthService<
     readonly CONFIRM_RESET_PASSWORD_SNACK_BAR_MESSAGE: string = 'Password changed successfully!';
 
     /**
-     * The default url for login requests. Is used when the method doesn't provide an url.
+     * The default url for login requests.
      */
     abstract readonly API_LOGIN_URL: string;
+
     /**
-     * The default url for refresh token requests. Is used when the method doesn't provide an url.
+     * The default url for logout requests.
+     */
+    abstract readonly API_LOGOUT_URL: string;
+
+    /**
+     * The default url for refresh token requests.
      */
     abstract readonly API_REFRESH_TOKEN_URL: string;
+
     /**
-     * The default url for request reset password requests. Is used when the method doesn't provide an url.
+     * The default url for request reset password requests.
      */
     abstract readonly API_REQUEST_RESET_PASSWORD_URL: string;
+
     /**
-     * The default url for confirm reset password requests. Is used when the method doesn't provide an url.
+     * The default url for confirm reset password requests.
      */
     abstract readonly API_CONFIRM_RESET_PASSWORD_URL: string;
+
     /**
-     * The default url for verify password reset token requests. Is used when the method doesn't provide an url.
+     * The default url for verify password reset token requests.
      */
     abstract readonly API_VERIFY_RESET_PASSWORD_TOKEN_URL: string;
 
@@ -179,18 +198,44 @@ export abstract class JwtAuthService<
     }
     // eslint-disable-next-line jsdoc/require-jsdoc
     set authData(authData: AuthDataType | undefined) {
+        authData = this.transformAuthDataBeforeSetting(authData);
         localStorage.setItem(this.AUTH_DATA_KEY, JSON.stringify(authData));
+        if (!authData) {
+            localStorage.removeItem(this.AUTH_DATA_KEY);
+        }
         this.authDataSubject.next(authData);
     }
 
     constructor(
-        private readonly http: HttpClient,
-        private readonly snackbar: MatSnackBar,
-        private readonly zone: NgZone
+        protected readonly http: HttpClient,
+        protected readonly snackbar: MatSnackBar,
+        protected readonly zone: NgZone
     ) {
         const stringData = localStorage.getItem(this.AUTH_DATA_KEY);
         const authData = stringData ? JSON.parse(stringData) as AuthDataType : undefined;
         this.authDataSubject = new BehaviorSubject(authData);
+    }
+
+    /**
+     * Gets called right before auth data is set.
+     * Can be used to transform some of the data.
+     *
+     * DEFAULT: When the api sends roles as a list of strings instead of Role objects,
+     * they are transformed to role objects with displayName and value being the string send by the api.
+     *
+     * @param authData - The auth data that should be set.
+     * @returns The transformed auth data or undefined.
+     */
+    protected transformAuthDataBeforeSetting(authData: AuthDataType | undefined): AuthDataType | undefined {
+        if (!authData) {
+            return undefined;
+        }
+        if (typeof authData.roles[0] === 'string') {
+            authData.roles = (authData.roles as unknown as RoleValue[]).map(r => {
+                return { displayName: r, value: r };
+            }) as unknown as Role[];
+        }
+        return authData;
     }
 
     /**
@@ -207,9 +252,12 @@ export abstract class JwtAuthService<
     /**
      * Logout the current user.
      */
-    logout(): void {
-        localStorage.removeItem(this.AUTH_DATA_KEY);
-        this.authDataSubject.next(null as unknown as AuthDataType);
+    async logout(): Promise<void> {
+        if (!this.authData) {
+            return;
+        }
+        await firstValueFrom(this.http.post<void>(this.API_LOGOUT_URL, { refreshToken: this.authData.refreshToken.value }));
+        this.authData = undefined;
     }
 
     /**
@@ -220,15 +268,9 @@ export abstract class JwtAuthService<
         if (!this.authData) {
             return;
         }
-        // Updates the date of the token instantly. That way it is ensured that refreshToken is called only once.
-        const newInvalidAfter = new Date();
-        newInvalidAfter.setMilliseconds(newInvalidAfter.getMilliseconds() + this.TOKEN_DURATION_IN_MS);
-        this.authData.token.expirationDate = newInvalidAfter;
-        this.authData = this.authData; // refreshes subject and local storage
-
-        const token: TokenType = await firstValueFrom(this.http.post<TokenType>(this.API_REFRESH_TOKEN_URL, {}));
-        this.authData.token = token;
-        this.authData = this.authData;
+        this.authData = await firstValueFrom(
+            this.http.post<AuthDataType>(this.API_REFRESH_TOKEN_URL, { refreshToken: this.authData.refreshToken })
+        );
     }
 
     /**
@@ -253,7 +295,7 @@ export abstract class JwtAuthService<
     async confirmResetPassword(newPassword: string, resetToken: string): Promise<void> {
         const body = {
             password: newPassword,
-            token: resetToken
+            resetToken: resetToken
         };
         await firstValueFrom(this.http.post<void>(this.API_CONFIRM_RESET_PASSWORD_URL, body));
         this.zone.run(() => {
@@ -269,21 +311,21 @@ export abstract class JwtAuthService<
      */
     async isResetTokenValid(resetToken: string): Promise<boolean> {
         return await firstValueFrom(
-            this.http.post<boolean>(this.API_VERIFY_RESET_PASSWORD_TOKEN_URL, { token: resetToken })
+            this.http.post<boolean>(this.API_VERIFY_RESET_PASSWORD_TOKEN_URL, { value: resetToken })
         );
     }
 
     /**
      * Checks whether or not the currently logged in user has one of the provided roles.
      *
-     * @param allowedRoles - All roles that are allowed to do a certain thing.
+     * @param allowedRolesValues - All roles that are allowed to do a certain thing.
      * @returns Whether or not the user has one of the provided allowed roles.
      */
-    hasRole(allowedRoles: Role[]): boolean {
+    hasRole(allowedRolesValues: RoleValue[]): boolean {
         if (!this.authData) {
             return false;
         }
-        if (allowedRoles.find(r => this.authData?.roles.includes(r))) {
+        if (allowedRolesValues.find(rv => this.authData?.roles.map(r => r.value).includes(rv))) {
             return true;
         }
         return false;
@@ -318,12 +360,17 @@ Can be used either directly or be extended from if your authData has additional 
 /**
  * The minimum values for authData.
  */
-export interface BaseAuthData<Token extends BaseToken> {
+export interface BaseAuthData<Token extends BaseToken, RoleValue extends string, Role extends BaseRole<RoleValue>> {
     /**
-     * The token used for authenticating requests.
-     * Consists of the string value and the expirationDate value.
+     * The access token used for authenticating requests.
+     * Consists of the string value and the expiration date.
      */
-    token: Token,
+    accessToken: Token,
+    /**
+     * The refresh token used for refreshing access tokens.
+     * Consists of the string value and the expiration date.
+     */
+    refreshToken: Token,
     /**
      * All roles of the currently logged in user.
      * Consists of an displayName and the actual string value.
@@ -333,6 +380,27 @@ export interface BaseAuthData<Token extends BaseToken> {
      * The id of the currently logged in user.
      */
     userId: string
+}
+```
+
+### BaseRole
+Can be used either directly or be extended from if your roles have additional values.
+
+```typescript
+/**
+ * Provides base information about a user role.
+ */
+export interface BaseRole<RoleValue extends string> {
+    /**
+     * The name of the role which can be used to display it in the ui.
+     * This is NOT used to determine if the user can access certain thing.
+     */
+    displayName: string,
+    /**
+     * The actual string value of the role.
+     * This is used to determine whether or not the user can access certain things.
+     */
+    value: RoleValue
 }
 ```
 
@@ -355,7 +423,7 @@ providers: [
     },
     {
         // This is optional but highly recommended.
-        provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS, useValue: ['localhost', 'my-great-domain.com']
+        provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS, useValue: ['localhost:3000', 'example.com/api']
     },
     ...
 ]
@@ -369,16 +437,12 @@ providers: [
  */
 @Injectable({ providedIn: 'root' })
 export class JwtInterceptor<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements HttpInterceptor {
-
-    /**
-     * The maximum amount of milliseconds before the expiration date to refresh the token.
-     * If the token still has more time than this left, it will not get refreshed.
-     */
-    protected readonly MAXIMUM_MS_BEFORE_EXPIRATION_FOR_REFRESH: number = SIX_HOURS_IN_MS;
 
     constructor(
         @Inject(NGX_AUTH_SERVICE)
@@ -397,21 +461,56 @@ export class JwtInterceptor<
      * @returns An Observable that is used by angular in the intercept chain.
      */
     intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-        if (!this.authService.authData?.token) {
+        if (this.refreshTokenExpired()) {
+            this.authService.authData = undefined;
+        }
+        if (!this.authService.authData?.accessToken) {
+            return next.handle(request);
+        }
+        if (this.requestIsToDisallowedDomain(request)) {
+            return next.handle(request);
+        }
+        if (this.requestDoesNotRequireToken(request)) {
             return next.handle(request);
         }
         if (this.tokenNeedsToBeRefreshed()) {
-            void this.authService.refreshToken();
-        }
-        if (!this.requestIsToAllowedDomain(request)) {
-            return next.handle(request);
+            return from(this.refreshAndHandle(request, next));
         }
         request = request.clone({
             setHeaders: {
-                authorization: `Bearer ${this.authService.authData.token.value}`
+                authorization: `Bearer ${this.authService.authData.accessToken.value}`
             }
         });
         return next.handle(request);
+    }
+
+    /**
+     * Check if the intercepted request is one of the special cases where no token is required.
+     * By default these are the refresh and the logout request.
+     *
+     * @param request - The http-request that was intercepted.
+     * @returns Whether or not the intercepted request is one of the special cases where no token is required.
+     */
+    protected requestDoesNotRequireToken(request: HttpRequest<unknown>): boolean {
+        return request.url === this.authService.API_REFRESH_TOKEN_URL
+            || request.url === this.authService.API_LOGOUT_URL;
+    }
+
+    /**
+     * Refreshes the token synchronous and sends the request afterwards.
+     *
+     * @param request - The http-request that was intercepted.
+     * @param next - The next http-handler in angular's chain.
+     * @returns A promise of an unknown HttpEvent. Inside the interceptor you need to call "return from(this.refreshAndHandle(...))".
+     */
+    protected async refreshAndHandle(request: HttpRequest<unknown>, next: HttpHandler): Promise<HttpEvent<unknown>> {
+        await this.authService.refreshToken();
+        request = request.clone({
+            setHeaders: {
+                authorization: `Bearer ${this.authService.authData?.accessToken.value}`
+            }
+        });
+        return await lastValueFrom(next.handle(request));
     }
 
     /**
@@ -420,9 +519,20 @@ export class JwtInterceptor<
      * @returns Whether or not the token needs to be refreshed.
      */
     protected tokenNeedsToBeRefreshed(): boolean {
-        const tokenExpirationDate: Date = new Date(this.authService.authData?.token.expirationDate as Date);
+        const tokenExpirationDate: Date = new Date(this.authService.authData?.accessToken.expirationDate as Date);
         const expirationInMs: number = tokenExpirationDate.getTime();
-        return (expirationInMs - Date.now()) <= this.MAXIMUM_MS_BEFORE_EXPIRATION_FOR_REFRESH;
+        return expirationInMs <= Date.now();
+    }
+
+    /**
+     * Checks whether or not the refresh token is expired.
+     *
+     * @returns Whether or not the refresh token is expired.
+     */
+    protected refreshTokenExpired(): boolean {
+        const tokenExpirationDate: Date = new Date(this.authService.authData?.refreshToken.expirationDate as Date);
+        const expirationInMs: number = tokenExpirationDate.getTime();
+        return expirationInMs <= Date.now();
     }
 
     /**
@@ -431,15 +541,15 @@ export class JwtInterceptor<
      * @param request - The request to check.
      * @returns Whether the request is to an allowed domain or not. Defaults to true if no allowed host names were provided.
      */
-    protected requestIsToAllowedDomain(request: HttpRequest<unknown>): boolean {
+    protected requestIsToDisallowedDomain(request: HttpRequest<unknown>): boolean {
         if (!this.allowedDomains) {
-            return true;
+            return false;
         }
         const domain = this.getDomainFromUrl(request.url);
         if (this.allowedDomains.includes(domain)) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     /**
@@ -492,9 +602,11 @@ providers: [
  */
 @Injectable({ providedIn: 'root' })
 export class HttpErrorInterceptor<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements HttpInterceptor {
 
     /**
@@ -546,8 +658,9 @@ export class HttpErrorInterceptor<
         return next.handle(request).pipe(
             catchError((error: HttpErrorResponse) => {
                 if (this.userShouldBeLoggedOut(error, request)) {
-                    this.authService.logout();
-                    void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+                    void this.authService.logout().then(() => {
+                        void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+                    });
                 }
                 if (this.errorDialogShouldBeDisplayed(error, request)) {
                     const errorData: ErrorData = { name: 'HTTP-Error', message: this.getErrorDataMessage(error) };
@@ -579,10 +692,8 @@ export class HttpErrorInterceptor<
      * @param request - Data about the request that caused the error.
      * @returns Whether or not an dialog should be displayed for the error.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected errorDialogShouldBeDisplayed(error: HttpErrorResponse, request: HttpRequest<unknown>): boolean {
-        if (request.url === this.authService.API_REFRESH_TOKEN_URL) {
-            return false;
-        }
         return true;
     }
 
@@ -641,39 +752,68 @@ canActivate: [JwtLoggedInGuard]
 ## Api
 ```typescript
 /**
+ * Contains the necessary base information for an angular logged in guard.
  * Checks if the user is currently logged in.
  */
 @Injectable({ providedIn: 'root' })
 export class JwtLoggedInGuard<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements CanActivate {
 
     /**
-     * When the user tries to access a route for which he doesn't have the permission he is logged out.
-     * This is the route to which he is redirected afterwards.
+     * When the user tries to access a route for which he doesn't have the permission and is logged out
+     * he gets redirected to this route afterwards.
      */
-    protected readonly REDIRECT_ROUTE = '/login';
+    protected readonly ROUTE_AFTER_LOGOUT = '/login';
+
+    /**
+     * When the user tries to access a route for which he doesn't have the permission but is NOT logged out
+     * he gets redirected to this route afterwards.
+     */
+    protected readonly ROUTE_AFTER_REDIRECT = '/';
 
     constructor(
-        private readonly router: Router,
+        protected readonly router: Router,
         @Inject(NGX_AUTH_SERVICE)
-        private readonly authService: AuthServiceType
+        protected readonly authService: AuthServiceType
     ) { }
 
 
     /**
      * The main method used by angular to determine if a user can access a certain route.
      *
+     * @param route - The route that the user tries to access.
+     * @param state - State data of the route.
      * @returns Whether or not the user can access the provided route.
      */
-    canActivate(): boolean {
+    canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
         if (this.authService.authData == null) {
-            this.authService.logout();
-            void this.router.navigate([this.REDIRECT_ROUTE], {});
+            if (this.userShouldBeLoggedOut(route, state)) {
+                void this.authService.logout().then(() => {
+                    void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+                });
+            }
+            else {
+                void this.router.navigate([this.ROUTE_AFTER_REDIRECT], {});
+            }
             return false;
         }
+        return true;
+    }
+
+    /**
+     * Defines whether or not the user should be logged out based on the route he tried to access.
+     *
+     * @param route - The route that the user failed to access.
+     * @param state - The router state.
+     * @returns Whether or not the user should be logged out.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected userShouldBeLoggedOut(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
         return true;
     }
 }
@@ -687,7 +827,7 @@ This is just the inverse of the JwtLoggedInGuard.
 ## Usage
 Just add the guard to any route that you want to protect:
 ```typescript
-canActivate: [JwtLoggedInGuard]
+canActivate: [JwtNotLoggedInGuard]
 ```
 
 ## Api
@@ -698,15 +838,24 @@ canActivate: [JwtLoggedInGuard]
  */
 @Injectable({ providedIn: 'root' })
 export class JwtNotLoggedInGuard<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements CanActivate {
 
     /**
-     * The route to which the user is redirected if he is already logged in.
+     * When the user tries to access a route for which he doesn't have the permission and is logged out
+     * he gets redirected to this route afterwards.
      */
-    protected readonly REDIRECT_ROUTE = '/';
+    protected readonly ROUTE_AFTER_LOGOUT = '/login';
+
+    /**
+     * When the user tries to access a route for which he doesn't have the permission but is NOT logged out
+     * he gets redirected to this route afterwards.
+     */
+    protected readonly ROUTE_AFTER_REDIRECT = '/';
 
     constructor(
         protected readonly router: Router,
@@ -718,13 +867,34 @@ export class JwtNotLoggedInGuard<
     /**
      * The main method used by angular to determine if a user can access a certain route.
      *
+     * @param route - The route that the user tries to access.
+     * @param state - State data of the route.
      * @returns Whether or not the user can access the provided route.
      */
-    canActivate(): boolean {
+    canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
         if (this.authService.authData != null) {
-            void this.router.navigate([this.REDIRECT_ROUTE], {});
+            if (this.userShouldBeLoggedOut(route, state)) {
+                void this.authService.logout().then(() => {
+                    void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+                });
+            }
+            else {
+                void this.router.navigate([this.ROUTE_AFTER_REDIRECT], {});
+            }
             return false;
         }
+        return true;
+    }
+
+    /**
+     * Defines whether or not the user should be logged out based on the route he tried to access.
+     *
+     * @param route - The route that the user failed to access.
+     * @param state - The router state.
+     * @returns Whether or not the user should be logged out.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected userShouldBeLoggedOut(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
         return true;
     }
 }
@@ -751,21 +921,29 @@ canActivate: [JwtRoleGuard]
  */
 @Injectable({ providedIn: 'root' })
 export class JwtRoleGuard<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements CanActivate {
 
     /**
-     * When the user tries to access a route for which he doesn't have the permission he is logged out.
-     * This is the route to which he is redirected afterwards.
+     * When the user tries to access a route for which he doesn't have the permission and is logged out
+     * he gets redirected to this route afterwards.
      */
-    protected readonly REDIRECT_ROUTE = '/login';
+    protected readonly ROUTE_AFTER_LOGOUT = '/login';
+
+    /**
+     * When the user tries to access a route for which he doesn't have the permission but is NOT logged out
+     * he gets redirected to this route afterwards.
+     */
+    protected readonly ROUTE_AFTER_REDIRECT = '/';
 
     constructor(
-        private readonly router: Router,
+        protected readonly router: Router,
         @Inject(NGX_AUTH_SERVICE)
-        private readonly authService: AuthServiceType
+        protected readonly authService: AuthServiceType
     ) { }
 
 
@@ -777,10 +955,16 @@ export class JwtRoleGuard<
      * @returns Whether or not the user can access the provided route.
      */
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-        const allowedRoles = this.getAllowedRolesForRoute(route, state);
+        const allowedRoles = this.getAllowedRoleValuesForRoute(route, state);
         if (!this.authService.hasRole(allowedRoles)) {
-            this.authService.logout();
-            void this.router.navigate([this.REDIRECT_ROUTE], {});
+            if (this.userShouldBeLoggedOut(route, state)) {
+                void this.authService.logout().then(() => {
+                    void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+                });
+            }
+            else {
+                void this.router.navigate([this.ROUTE_AFTER_REDIRECT], {});
+            }
             return false;
         }
         return true;
@@ -797,8 +981,20 @@ export class JwtRoleGuard<
      * @returns The allowed roles for the provided route as an array.
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected getAllowedRolesForRoute(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Role[] {
-        return route.data['allowedRoles'] as Role[] ?? [];
+    protected getAllowedRoleValuesForRoute(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): RoleValue[] {
+        return route.data['allowedRoles'] as RoleValue[] ?? [];
+    }
+
+    /**
+     * Defines whether or not the user should be logged out based on the route he tried to access.
+     *
+     * @param route - The route that the user failed to access.
+     * @param state - The router state.
+     * @returns Whether or not the user should be logged out.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected userShouldBeLoggedOut(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
+        return true;
     }
 }
 ```
@@ -820,7 +1016,7 @@ Here you only need to override the method that decides if a user belongs to a ro
 import { JwtBelongsToGuard } from 'ngx-material-auth';
 
 @Injectable({ providedIn: 'root' })
-export class BelongsToUserGuard extends JwtBelongsToGuard<CustomAuthData, CustomToken, CustomAuthService> {
+export class BelongsToUserGuard extends JwtBelongsToGuard<CustomAuthData, CustomToken, CustomRoleValue, CustomRole<CustomRoleValue>, CustomAuthService> {
 
     constructor(
         private readonly angularRouter: Router,
@@ -849,20 +1045,28 @@ canActivate: [BelongsToUserGuard]
  * This can be useful when eg. The user is allowed to display his own user-profile but not the user-profiles of others.
  */
 export abstract class JwtBelongsToGuard<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements CanActivate {
 
     /**
-     * When the user tries to access a route for which he doesn't have the permission he is logged out.
-     * This is the route to which he is redirected afterwards.
+     * When the user tries to access a route for which he doesn't have the permission and is logged out
+     * he gets redirected to this route afterwards.
      */
-    protected readonly REDIRECT_ROUTE = '/login';
+    protected readonly ROUTE_AFTER_LOGOUT = '/login';
+
+    /**
+     * When the user tries to access a route for which he doesn't have the permission but is NOT logged out
+     * he gets redirected to this route afterwards.
+     */
+    protected readonly ROUTE_AFTER_REDIRECT = '/';
 
     constructor(
-        private readonly router: Router,
-        private readonly authService: AuthServiceType
+        protected readonly router: Router,
+        protected readonly authService: AuthServiceType
     ) { }
 
     /**
@@ -874,10 +1078,28 @@ export abstract class JwtBelongsToGuard<
      */
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
         if (!this.getBelongsToForRoute(route, state)) {
-            this.authService.logout();
-            void this.router.navigate([this.REDIRECT_ROUTE], {});
+            if (this.userShouldBeLoggedOut(route, state)) {
+                void this.authService.logout().then(() => {
+                    void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+                });
+            }
+            else {
+                void this.router.navigate([this.ROUTE_AFTER_REDIRECT], {});
+            }
             return false;
         }
+        return true;
+    }
+
+    /**
+     * Defines whether or not the user should be logged out based on the route he tried to access.
+     *
+     * @param route - The route that the user failed to access.
+     * @param state - The router state.
+     * @returns Whether or not the user should be logged out.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected userShouldBeLoggedOut(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
         return true;
     }
 
@@ -909,7 +1131,7 @@ It uses the login method of your auth service.
 ## Api
 ```typescript
 /**
- * The interface for the login functionality.
+ * A simple login box.
  */
 @Component({
     selector: 'ngx-mat-auth-login',
@@ -917,9 +1139,11 @@ It uses the login method of your auth service.
     styleUrls: ['./login.component.scss']
 })
 export class NgxMatAuthLoginComponent<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements OnInit {
 
     /**
@@ -983,6 +1207,7 @@ export class NgxMatAuthLoginComponent<
      * The password input by the user.
      */
     password?: string;
+
     /**
      * The email input by the user.
      */
@@ -995,17 +1220,20 @@ export class NgxMatAuthLoginComponent<
 
     constructor(
         @Inject(NGX_AUTH_SERVICE)
-        private readonly authService: AuthServiceType,
-        private readonly router: Router
+        protected readonly authService: AuthServiceType,
+        @Inject(NGX_GET_VALIDATION_ERROR_MESSAGE)
+        protected readonly defaultGetValidationErrorMessage: (model: NgModel) => string,
+        protected readonly router: Router
     ) { }
 
     ngOnInit(): void {
-        this.getValidationErrorMessage = this.getValidationErrorMessage ?? getValidationErrorMessage;
+        this.getValidationErrorMessage = this.getValidationErrorMessage ?? this.defaultGetValidationErrorMessage;
         this.loginTitle = this.loginTitle ?? 'Login';
         this.emailInputLabel = this.emailInputLabel ?? 'Email';
         this.passwordInputLabel = this.passwordInputLabel ?? 'Password';
         this.loginButtonLabel = this.loginButtonLabel ?? 'Login';
-        this.forgotPasswordLinkData = this.forgotPasswordLinkData ?? { displayName: 'Forgot your password?', route: '/reset-password' };
+        // eslint-disable-next-line max-len
+        this.forgotPasswordLinkData = this.forgotPasswordLinkData ?? { displayName: 'Forgot your password?', route: '/request-reset-password' };
         this.routeAfterLogin = this.routeAfterLogin ?? '/';
     }
 
@@ -1050,7 +1278,7 @@ It uses the requestResetPassword-method of your auth service.
 ## Api
 ```typescript
 /**
- * The interface for the request reset password functionality.
+ * A simple request reset password box.
  */
 @Component({
     selector: 'ngx-mat-auth-request-reset-password',
@@ -1058,9 +1286,11 @@ It uses the requestResetPassword-method of your auth service.
     styleUrls: ['./request-reset-password.component.scss']
 })
 export class NgxMatAuthRequestResetPasswordComponent<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements OnInit {
 
     /**
@@ -1117,12 +1347,14 @@ export class NgxMatAuthRequestResetPasswordComponent<
     constructor(
         @Inject(NGX_AUTH_SERVICE)
         protected readonly authService: AuthServiceType,
+        @Inject(NGX_GET_VALIDATION_ERROR_MESSAGE)
+        protected readonly defaultGetValidationErrorMessage: (model: NgModel) => string,
         protected readonly router: Router
     ) { }
 
     ngOnInit(): void {
         this.requestResetPasswordTitle = this.requestResetPasswordTitle ?? 'Forgot Password';
-        this.getValidationErrorMessage = this.getValidationErrorMessage ?? getValidationErrorMessage;
+        this.getValidationErrorMessage = this.getValidationErrorMessage ?? this.defaultGetValidationErrorMessage;
         this.emailInputLabel = this.emailInputLabel ?? 'Email';
         this.sendEmailButtonLabel = this.sendEmailButtonLabel ?? 'Send Email';
         this.cancelButtonLabel = this.cancelButtonLabel ?? 'Cancel';
@@ -1190,9 +1422,11 @@ It uses the requestResetPassword-method of your auth service.
     styleUrls: ['./confirm-reset-password.component.scss']
 })
 export class NgxMatAuthConfirmResetPasswordComponent<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements OnInit {
 
     /**
@@ -1307,6 +1541,8 @@ export class NgxMatAuthConfirmResetPasswordComponent<
     constructor(
         @Inject(NGX_AUTH_SERVICE)
         protected readonly authService: AuthServiceType,
+        @Inject(NGX_GET_VALIDATION_ERROR_MESSAGE)
+        protected readonly defaultGetValidationErrorMessage: (model: NgModel) => string,
         protected readonly router: Router,
         protected readonly route: ActivatedRoute,
         protected readonly zone: NgZone,
@@ -1322,14 +1558,17 @@ export class NgxMatAuthConfirmResetPasswordComponent<
         ) {
             await this.router.navigate([this.routeIfResetTokenInvalid]);
             this.zone.run(() => {
-                this.dialog.open(ErrorDialogComponent, { data: this.invalidResetTokenErrorData, autoFocus: false, restoreFocus: false });
+                this.dialog.open(
+                    NgxMatAuthErrorDialogComponent,
+                    { data: this.invalidResetTokenErrorData, autoFocus: false, restoreFocus: false }
+                );
             });
             return;
         }
     }
 
     private initDefaultValues(): void {
-        this.getValidationErrorMessage = this.getValidationErrorMessage ?? getValidationErrorMessage;
+        this.getValidationErrorMessage = this.getValidationErrorMessage ?? this.defaultGetValidationErrorMessage;
         this.confirmResetPasswordTitle = this.confirmResetPasswordTitle ?? 'New Password';
         this.passwordInputLabel = this.passwordInputLabel ?? 'Password';
         this.confirmPasswordInputLabel = this.confirmPasswordInputLabel ?? 'Confirm Password';

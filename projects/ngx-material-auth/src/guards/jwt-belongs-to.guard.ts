@@ -2,6 +2,7 @@ import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from
 import { JwtAuthService } from '../services/jwt-auth.service';
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseToken } from '../models/base-token.model';
+import { BaseRole } from '../models/base-role.model';
 
 /**
  * Contains the necessary base information for an angular belongs to guard.
@@ -10,16 +11,24 @@ import { BaseToken } from '../models/base-token.model';
  * This can be useful when eg. The user is allowed to display his own user-profile but not the user-profiles of others.
  */
 export abstract class JwtBelongsToGuard<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements CanActivate {
 
     /**
-     * When the user tries to access a route for which he doesn't have the permission he is logged out.
-     * This is the route to which he is redirected afterwards.
+     * When the user tries to access a route for which he doesn't have the permission and is logged out
+     * he gets redirected to this route afterwards.
      */
-    protected readonly REDIRECT_ROUTE = '/login';
+    protected readonly ROUTE_AFTER_LOGOUT = '/login';
+
+    /**
+     * When the user tries to access a route for which he doesn't have the permission but is NOT logged out
+     * he gets redirected to this route afterwards.
+     */
+    protected readonly ROUTE_AFTER_REDIRECT = '/';
 
     constructor(
         protected readonly router: Router,
@@ -35,10 +44,28 @@ export abstract class JwtBelongsToGuard<
      */
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
         if (!this.getBelongsToForRoute(route, state)) {
-            this.authService.logout();
-            void this.router.navigate([this.REDIRECT_ROUTE], {});
+            if (this.userShouldBeLoggedOut(route, state)) {
+                void this.authService.logout().then(() => {
+                    void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+                });
+            }
+            else {
+                void this.router.navigate([this.ROUTE_AFTER_REDIRECT], {});
+            }
             return false;
         }
+        return true;
+    }
+
+    /**
+     * Defines whether or not the user should be logged out based on the route he tried to access.
+     *
+     * @param route - The route that the user failed to access.
+     * @param state - The router state.
+     * @returns Whether or not the user should be logged out.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected userShouldBeLoggedOut(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
         return true;
     }
 

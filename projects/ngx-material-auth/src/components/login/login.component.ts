@@ -3,6 +3,7 @@ import { NgModel } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseToken } from '../../models/base-token.model';
+import { BaseRole } from '../../models/base-role.model';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../../services/jwt-auth.service';
 import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-message.function';
 
@@ -25,7 +26,7 @@ export interface ForgotPasswordLinkData {
 }
 
 /**
- * The interface for the login functionality.
+ * A simple login box.
  */
 @Component({
     selector: 'ngx-mat-auth-login',
@@ -33,9 +34,11 @@ export interface ForgotPasswordLinkData {
     styleUrls: ['./login.component.scss']
 })
 export class NgxMatAuthLoginComponent<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements OnInit {
 
     /**

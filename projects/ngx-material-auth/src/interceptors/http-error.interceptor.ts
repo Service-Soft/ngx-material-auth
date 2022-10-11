@@ -8,15 +8,18 @@ import { ErrorData } from '../models/error-data.model';
 import { NgxMatAuthErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { Inject, Injectable } from '@angular/core';
+import { BaseRole } from '../models/base-role.model';
 
 /**
  * Interceptor that does error handling for http requests.
  */
 @Injectable({ providedIn: 'root' })
 export class HttpErrorInterceptor<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
     TokenType extends BaseToken,
-    AuthServiceType extends JwtAuthService<AuthDataType, TokenType>
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
+    AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements HttpInterceptor {
 
     /**
@@ -68,8 +71,9 @@ export class HttpErrorInterceptor<
         return next.handle(request).pipe(
             catchError((error: HttpErrorResponse) => {
                 if (this.userShouldBeLoggedOut(error, request)) {
-                    this.authService.logout();
-                    void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+                    void this.authService.logout().then(() => {
+                        void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+                    });
                 }
                 if (this.errorDialogShouldBeDisplayed(error, request)) {
                     const errorData: ErrorData = { name: 'HTTP-Error', message: this.getErrorDataMessage(error) };
@@ -101,10 +105,8 @@ export class HttpErrorInterceptor<
      * @param request - Data about the request that caused the error.
      * @returns Whether or not an dialog should be displayed for the error.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected errorDialogShouldBeDisplayed(error: HttpErrorResponse, request: HttpRequest<unknown>): boolean {
-        if (request.url === this.authService.API_REFRESH_TOKEN_URL) {
-            return false;
-        }
         return true;
     }
 

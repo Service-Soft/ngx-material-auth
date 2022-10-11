@@ -23,6 +23,6 @@ export * from './models/base-auth-data.model';
 export * from './models/base-token.model';
 export * from './models/error-data.model';
 export * from './models/login-data.model';
-export * from './models/role.model';
+export * from './models/base-role.model';
 
 export * from './services/jwt-auth.service';

@@ -17,6 +17,14 @@ app.get('/throw-401', function (req, res, next) {
     res.status(401).send();
 })
 
+app.post('/logout', function (req, res, next) {
+    res.status(200).send();
+})
+
+// app.post('/refresh-token', function (req, res, next) {
+//     res.status(200).send();
+// })
+
 app.listen(3000, function () {
     console.log('Api running on port 3000')
 })

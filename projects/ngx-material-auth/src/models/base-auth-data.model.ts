@@ -1,15 +1,20 @@
 import { BaseToken } from './base-token.model';
-import { Role } from './role.model';
+import { BaseRole } from './base-role.model';
 
 /**
  * The minimum values for authData.
  */
-export interface BaseAuthData<Token extends BaseToken> {
+export interface BaseAuthData<Token extends BaseToken, RoleValue extends string, Role extends BaseRole<RoleValue>> {
     /**
-     * The token used for authenticating requests.
-     * Consists of the string value and the expirationDate value.
+     * The access token used for authenticating requests.
+     * Consists of the string value and the expiration date.
      */
-    token: Token,
+    accessToken: Token,
+    /**
+     * The refresh token used for refreshing access tokens.
+     * Consists of the string value and the expiration date.
+     */
+    refreshToken: Token,
     /**
      * All roles of the currently logged in user.
      * Consists of an displayName and the actual string value.
