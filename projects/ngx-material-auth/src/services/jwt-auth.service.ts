@@ -5,6 +5,7 @@ import { BaseToken } from '../models/base-token.model';
 import { LoginData } from '../models/login-data.model';
 import { InjectionToken, NgZone } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { BaseRole } from '../models/base-role.model';
 
 export const NGX_AUTH_SERVICE = new InjectionToken('Provide for the authService used eg. in guards or the login component.', {
     providedIn: 'root',
@@ -17,16 +18,18 @@ export const NGX_AUTH_SERVICE = new InjectionToken('Provide for the authService 
     },
 });
 
-const DAY_IN_MS = 86400000;
+const ONE_HUNDRED_DAYS_IN_MS: number = 8640000000;
+const HOUR_IN_MS: number = 3600000;
 
 /**
  * The base class for an authentication service.
  */
 export abstract class JwtAuthService<
-    AuthDataType extends BaseAuthData<TokenType>,
+    AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
+    RoleValue extends string,
+    Role extends BaseRole<RoleValue>,
     TokenType extends BaseToken
 > {
-
     /**
      * The subject of the currently stored authData.
      */
@@ -38,11 +41,18 @@ export abstract class JwtAuthService<
     readonly AUTH_DATA_KEY = 'authData';
 
     /**
-     * The duration of the token in milliseconds.
+     * The duration of the access token in milliseconds.
      *
-     * @default 86400000 // 1 day
+     * @default 3600000 // 1 hour
      */
-    readonly TOKEN_DURATION_IN_MS: number = DAY_IN_MS;
+    readonly ACCESS_TOKEN_DURATION_IN_MS: number = HOUR_IN_MS;
+
+    /**
+     * The duration of the refresh token in milliseconds.
+     *
+     * @default 8640000000 // 100 days
+     */
+    readonly REFRESH_TOKEN_DURATION_IN_MS: number = ONE_HUNDRED_DAYS_IN_MS;
 
     /**
      * The message to display inside a snackbar when the mail for resetting a password was sent successfully.
@@ -55,23 +65,32 @@ export abstract class JwtAuthService<
     readonly CONFIRM_RESET_PASSWORD_SNACK_BAR_MESSAGE: string = 'Password changed successfully!';
 
     /**
-     * The default url for login requests. Is used when the method doesn't provide an url.
+     * The default url for login requests.
      */
     abstract readonly API_LOGIN_URL: string;
+
     /**
-     * The default url for refresh token requests. Is used when the method doesn't provide an url.
+     * The default url for logout requests.
+     */
+    abstract readonly API_LOGOUT_URL: string;
+
+    /**
+     * The default url for refresh token requests.
      */
     abstract readonly API_REFRESH_TOKEN_URL: string;
+
     /**
-     * The default url for request reset password requests. Is used when the method doesn't provide an url.
+     * The default url for request reset password requests.
      */
     abstract readonly API_REQUEST_RESET_PASSWORD_URL: string;
+
     /**
-     * The default url for confirm reset password requests. Is used when the method doesn't provide an url.
+     * The default url for confirm reset password requests.
      */
     abstract readonly API_CONFIRM_RESET_PASSWORD_URL: string;
+
     /**
-     * The default url for verify password reset token requests. Is used when the method doesn't provide an url.
+     * The default url for verify password reset token requests.
      */
     abstract readonly API_VERIFY_RESET_PASSWORD_TOKEN_URL: string;
 
@@ -85,7 +104,11 @@ export abstract class JwtAuthService<
     }
     // eslint-disable-next-line jsdoc/require-jsdoc
     set authData(authData: AuthDataType | undefined) {
+        authData = this.transformAuthDataBeforeSetting(authData);
         localStorage.setItem(this.AUTH_DATA_KEY, JSON.stringify(authData));
+        if (!authData) {
+            localStorage.removeItem(this.AUTH_DATA_KEY);
+        }
         this.authDataSubject.next(authData);
     }
 
@@ -97,6 +120,28 @@ export abstract class JwtAuthService<
         const stringData = localStorage.getItem(this.AUTH_DATA_KEY);
         const authData = stringData ? JSON.parse(stringData) as AuthDataType : undefined;
         this.authDataSubject = new BehaviorSubject(authData);
+    }
+
+    /**
+     * Gets called right before auth data is set.
+     * Can be used to transform some of the data.
+     *
+     * DEFAULT: When the api sends roles as a list of strings instead of Role objects,
+     * they are transformed to role objects with displayName and value being the string send by the api.
+     *
+     * @param authData - The auth data that should be set.
+     * @returns The transformed auth data or undefined.
+     */
+    protected transformAuthDataBeforeSetting(authData: AuthDataType | undefined): AuthDataType | undefined {
+        if (!authData) {
+            return undefined;
+        }
+        if (typeof authData.roles[0] === 'string') {
+            authData.roles = (authData.roles as unknown as RoleValue[]).map(r => {
+                return { displayName: r, value: r };
+            }) as unknown as Role[];
+        }
+        return authData;
     }
 
     /**
@@ -113,9 +158,12 @@ export abstract class JwtAuthService<
     /**
      * Logout the current user.
      */
-    logout(): void {
-        localStorage.removeItem(this.AUTH_DATA_KEY);
-        this.authDataSubject.next(null as unknown as AuthDataType);
+    async logout(): Promise<void> {
+        if (!this.authData) {
+            return;
+        }
+        await firstValueFrom(this.http.post<void>(this.API_LOGOUT_URL, { refreshToken: this.authData.refreshToken.value }));
+        this.authData = undefined;
     }
 
     /**
@@ -126,15 +174,9 @@ export abstract class JwtAuthService<
         if (!this.authData) {
             return;
         }
-        // Updates the date of the token instantly. That way it is ensured that refreshToken is called only once.
-        const newInvalidAfter = new Date();
-        newInvalidAfter.setMilliseconds(newInvalidAfter.getMilliseconds() + this.TOKEN_DURATION_IN_MS);
-        this.authData.token.expirationDate = newInvalidAfter;
-        this.authData = this.authData; // refreshes subject and local storage
-
-        const token: TokenType = await firstValueFrom(this.http.post<TokenType>(this.API_REFRESH_TOKEN_URL, {}));
-        this.authData.token = token;
-        this.authData = this.authData;
+        this.authData = await firstValueFrom(
+            this.http.post<AuthDataType>(this.API_REFRESH_TOKEN_URL, { refreshToken: this.authData.refreshToken })
+        );
     }
 
     /**
@@ -159,7 +201,7 @@ export abstract class JwtAuthService<
     async confirmResetPassword(newPassword: string, resetToken: string): Promise<void> {
         const body = {
             password: newPassword,
-            token: resetToken
+            resetToken: resetToken
         };
         await firstValueFrom(this.http.post<void>(this.API_CONFIRM_RESET_PASSWORD_URL, body));
         this.zone.run(() => {
@@ -175,7 +217,7 @@ export abstract class JwtAuthService<
      */
     async isResetTokenValid(resetToken: string): Promise<boolean> {
         return await firstValueFrom(
-            this.http.post<boolean>(this.API_VERIFY_RESET_PASSWORD_TOKEN_URL, { token: resetToken })
+            this.http.post<boolean>(this.API_VERIFY_RESET_PASSWORD_TOKEN_URL, { value: resetToken })
         );
     }
 
@@ -185,7 +227,7 @@ export abstract class JwtAuthService<
      * @param allowedRolesValues - All roles that are allowed to do a certain thing.
      * @returns Whether or not the user has one of the provided allowed roles.
      */
-    hasRole(allowedRolesValues: string[]): boolean {
+    hasRole(allowedRolesValues: RoleValue[]): boolean {
         if (!this.authData) {
             return false;
         }
