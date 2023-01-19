@@ -2,8 +2,8 @@ import { Component, Inject, Input, OnInit } from '@angular/core';
 import { NgModel } from '@angular/forms';
 import { Router } from '@angular/router';
 import { BaseAuthData } from '../../models/base-auth-data.model';
-import { BaseToken } from '../../models/base-token.model';
 import { BaseRole } from '../../models/base-role.model';
+import { BaseToken } from '../../models/base-token.model';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../../services/jwt-auth.service';
 import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-message.function';
 

@@ -144,7 +144,7 @@ export class HttpErrorInterceptor<
      * @returns Whether or not the provided error has something to do with CORS.
      */
     protected isCORSError(error: HttpErrorResponse): boolean {
-        const stringifiedError = JSON.stringify(error);
+        const stringifiedError: string = JSON.stringify(error);
         return stringifiedError === JSON.stringify({ isTrusted: true })
             || stringifiedError === JSON.stringify({ isTrusted: false });
     }

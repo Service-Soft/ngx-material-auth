@@ -1,9 +1,9 @@
-import { Injectable, Inject } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from '@angular/router';
-import { JwtAuthService, NGX_AUTH_SERVICE } from '../services/jwt-auth.service';
 import { BaseAuthData } from '../models/base-auth-data.model';
-import { BaseToken } from '../models/base-token.model';
 import { BaseRole } from '../models/base-role.model';
+import { BaseToken } from '../models/base-token.model';
+import { JwtAuthService, NGX_AUTH_SERVICE } from '../services/jwt-auth.service';
 
 /**
  * Contains the necessary base information for an angular role guard.
@@ -45,7 +45,7 @@ export class JwtRoleGuard<
      * @returns Whether or not the user can access the provided route.
      */
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-        const allowedRoles = this.getAllowedRoleValuesForRoute(route, state);
+        const allowedRoles: RoleValue[] = this.getAllowedRoleValuesForRoute(route, state);
         if (!this.authService.hasRole(allowedRoles)) {
             if (this.userShouldBeLoggedOut(route, state)) {
                 void this.authService.logout().then(() => {

@@ -1,4 +1,4 @@
-import { NavbarRow, FooterRow } from 'ngx-material-navigation';
+import { FooterRow, NavbarRow } from 'ngx-material-navigation';
 
 export const navbarRows: NavbarRow[] = [
     {
@@ -38,7 +38,7 @@ export const navbarRows: NavbarRow[] = [
                         name: 'Belongs To Guard',
                         route: 'guards/belongs-to'
                     }
-                ],
+                ]
             },
             {
                 type: 'internalLink',
@@ -57,7 +57,7 @@ export const footerRows: FooterRow[] = [
                 type: 'title',
                 title: 'NGX-MATERIAL-AUTH',
                 position: 'center'
-            },
+            }
         ]
     }
 ];
