@@ -1,12 +1,12 @@
-import { HttpInterceptor, HttpEvent, HttpHandler, HttpRequest } from '@angular/common/http';
+import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Inject, Injectable, InjectionToken } from '@angular/core';
 import { from, lastValueFrom, Observable } from 'rxjs';
 import { BaseAuthData } from '../models/base-auth-data.model';
-import { BaseToken } from '../models/base-token.model';
 import { BaseRole } from '../models/base-role.model';
+import { BaseToken } from '../models/base-token.model';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../services/jwt-auth.service';
 
-export const NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS = new InjectionToken<string[] | void>(
+export const NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS: InjectionToken<string[]> = new InjectionToken(
     'Used to define domains to which an jwt token should be added. This should be used to not send tokens e.g. to third party apis.',
     {
         providedIn: 'root',
@@ -14,9 +14,9 @@ export const NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS = new InjectionToken<string[] |
             // eslint-disable-next-line no-console
             console.warn(
                 // eslint-disable-next-line max-len
-                'No allowedDomains have been provided for the token NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS.\nRight now every http-request adds the jwt token. It is encouraged to provide a value for this to prohibit sending jwt tokens to e.g. third party apis.\nAdd this to your app.module.ts provider array:\n{\n    provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS,\n    useValue: ["myDomain", "myOtherDomain"]\n}',
+                'No allowedDomains have been provided for the token NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS.\nRight now every http-request adds the jwt token. It is encouraged to provide a value for this to prohibit sending jwt tokens to e.g. third party apis.\nAdd this to your app.module.ts provider array:\n{\n    provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS,\n    useValue: ["myDomain", "myOtherDomain"]\n}'
             );
-        },
+        }
     }
 );
 
@@ -134,7 +134,7 @@ export class JwtInterceptor<
         if (!this.allowedDomains) {
             return false;
         }
-        const domain = this.getDomainFromUrl(request.url);
+        const domain: string = this.getDomainFromUrl(request.url);
         if (this.allowedDomains.includes(domain)) {
             return false;
         }
