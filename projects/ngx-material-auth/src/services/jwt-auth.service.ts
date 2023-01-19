@@ -1,22 +1,26 @@
-import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { BaseAuthData } from '../models/base-auth-data.model';
-import { BaseToken } from '../models/base-token.model';
-import { LoginData } from '../models/login-data.model';
 import { InjectionToken, NgZone } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
+import { BaseToken } from '../models/base-token.model';
+import { LoginData } from '../models/login-data.model';
 
-export const NGX_AUTH_SERVICE = new InjectionToken('Provide for the authService used eg. in guards or the login component.', {
-    providedIn: 'root',
-    factory: () => {
-        // eslint-disable-next-line no-console
-        console.error(
-            // eslint-disable-next-line max-len
-            'No AuthService has been provided for the token NGX_AUTH_SERVICE\nAdd this to your app.module.ts provider array:\n{\n    provide: NGX_AUTH_SERVICE,\n    useExisting: MyAuthService\n}',
-        );
-    },
-});
+// eslint-disable-next-line @typescript-eslint/typedef
+export const NGX_AUTH_SERVICE = new InjectionToken(
+    'Provide for the authService used eg. in guards or the login component.',
+    {
+        providedIn: 'root',
+        factory: () => {
+            // eslint-disable-next-line no-console
+            console.error(
+                // eslint-disable-next-line max-len
+                'No AuthService has been provided for the token NGX_AUTH_SERVICE\nAdd this to your app.module.ts provider array:\n{\n    provide: NGX_AUTH_SERVICE,\n    useExisting: MyAuthService\n}'
+            );
+        }
+    }
+);
 
 const ONE_HUNDRED_DAYS_IN_MS: number = 8640000000;
 const HOUR_IN_MS: number = 3600000;
@@ -117,8 +121,8 @@ export abstract class JwtAuthService<
         protected readonly snackbar: MatSnackBar,
         protected readonly zone: NgZone
     ) {
-        const stringData = localStorage.getItem(this.AUTH_DATA_KEY);
-        const authData = stringData ? JSON.parse(stringData) as AuthDataType : undefined;
+        const stringData: string | null = localStorage.getItem(this.AUTH_DATA_KEY);
+        const authData: AuthDataType | undefined = stringData ? JSON.parse(stringData) as AuthDataType : undefined;
         this.authDataSubject = new BehaviorSubject(authData);
     }
 
@@ -199,11 +203,7 @@ export abstract class JwtAuthService<
      * @param resetToken - The token from the email. Needed to authorize the password reset.
      */
     async confirmResetPassword(newPassword: string, resetToken: string): Promise<void> {
-        const body = {
-            password: newPassword,
-            resetToken: resetToken
-        };
-        await firstValueFrom(this.http.post<void>(this.API_CONFIRM_RESET_PASSWORD_URL, body));
+        await firstValueFrom(this.http.post<void>(this.API_CONFIRM_RESET_PASSWORD_URL, { password: newPassword, resetToken: resetToken }));
         this.zone.run(() => {
             this.snackbar.open(this.CONFIRM_RESET_PASSWORD_SNACK_BAR_MESSAGE);
         });

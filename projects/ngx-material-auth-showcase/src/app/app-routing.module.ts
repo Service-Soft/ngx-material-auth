@@ -41,7 +41,7 @@ const routes: Routes = [
         path: 'interceptors',
         loadChildren: () => import('./pages/interceptors/interceptors.module').then(m => m.InterceptorsModule),
         canActivate: [JwtLoggedInGuard]
-    },
+    }
 ];
 
 @NgModule({

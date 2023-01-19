@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ErrorData } from '../../models/error-data.model';
 
 /**
@@ -12,14 +12,15 @@ import { ErrorData } from '../../models/error-data.model';
     styleUrls: ['./error-dialog.component.scss'],
     standalone: true,
     imports: [
-        MatButtonModule
+        MatButtonModule,
+        MatDialogModule
     ]
 })
 export class NgxMatAuthErrorDialogComponent {
 
     constructor(
         public dialogRef: MatDialogRef<NgxMatAuthErrorDialogComponent>,
-        @Inject(MAT_DIALOG_DATA) public error: ErrorData,
+        @Inject(MAT_DIALOG_DATA) public error: ErrorData
     ) { }
 
     /**
