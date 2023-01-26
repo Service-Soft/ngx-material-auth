@@ -42,7 +42,7 @@ export abstract class JwtAuthService<
     /**
      * The key for the authData saved in local storage.
      */
-    readonly AUTH_DATA_KEY = 'authData';
+    readonly AUTH_DATA_KEY: string = 'authData';
 
     /**
      * The duration of the access token in milliseconds.

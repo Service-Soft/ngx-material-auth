@@ -25,17 +25,17 @@ export class HttpErrorInterceptor<
     /**
      * The route to which the user gets redirected to after he triggers an error which should log him out (eg. 401 Unauthorized).
      */
-    protected readonly ROUTE_AFTER_LOGOUT = '/';
+    protected readonly ROUTE_AFTER_LOGOUT: string = '/';
 
     /**
      * The message to display when the user has no internet connection.
      */
-    protected readonly NO_INTERNET_CONNECTION_ERROR_MESSAGE = 'No Internet Connection.<br>Please try again later.';
+    protected readonly NO_INTERNET_CONNECTION_ERROR_MESSAGE: string = 'No Internet Connection.<br>Please try again later.';
 
     /**
      * The message to display when an error with CORS occurs.
      */
-    protected readonly CORS_ERROR_MESSAGE = 'CORS Error<br>Check your console for more information.';
+    protected readonly CORS_ERROR_MESSAGE: string = 'CORS Error<br>Check your console for more information.';
 
     /**
      * All error codes for which the user should be logged out.

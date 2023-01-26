@@ -44,7 +44,7 @@
         "@angular/compiler-cli": "~15.1.1",
         "@types/jasmine": "~4.3.1",
         "concurrently": "^7.6.0",
-        "eslint-config-service-soft": "1.0.8",
+        "eslint-config-service-soft": "^1.0.9",
         "jasmine-core": "~4.5.0",
         "karma": "~6.4.1",
         "karma-chrome-launcher": "~3.1.1",
