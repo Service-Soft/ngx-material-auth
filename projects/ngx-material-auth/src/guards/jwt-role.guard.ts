@@ -22,13 +22,13 @@ export class JwtRoleGuard<
      * When the user tries to access a route for which he doesn't have the permission and is logged out
      * he gets redirected to this route afterwards.
      */
-    protected readonly ROUTE_AFTER_LOGOUT = '/login';
+    protected readonly ROUTE_AFTER_LOGOUT: string = '/login';
 
     /**
      * When the user tries to access a route for which he doesn't have the permission but is NOT logged out
      * he gets redirected to this route afterwards.
      */
-    protected readonly ROUTE_AFTER_REDIRECT = '/';
+    protected readonly ROUTE_AFTER_REDIRECT: string = '/';
 
     constructor(
         protected readonly router: Router,

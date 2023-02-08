@@ -42,7 +42,7 @@ export abstract class JwtAuthService<
     /**
      * The key for the authData saved in local storage.
      */
-    readonly AUTH_DATA_KEY = 'authData';
+    readonly AUTH_DATA_KEY: string = 'authData';
 
     /**
      * The duration of the access token in milliseconds.
@@ -192,7 +192,7 @@ export abstract class JwtAuthService<
     async requestResetPassword(email: string): Promise<void> {
         await firstValueFrom(this.http.post<void>(this.API_REQUEST_RESET_PASSWORD_URL, { email: email }));
         this.zone.run(() => {
-            this.snackbar.open(this.REQUEST_RESET_PASSWORD_SNACK_BAR_MESSAGE);
+            this.snackbar.open(this.REQUEST_RESET_PASSWORD_SNACK_BAR_MESSAGE, undefined, { duration: 5000 });
         });
     }
 
@@ -205,7 +205,7 @@ export abstract class JwtAuthService<
     async confirmResetPassword(newPassword: string, resetToken: string): Promise<void> {
         await firstValueFrom(this.http.post<void>(this.API_CONFIRM_RESET_PASSWORD_URL, { password: newPassword, resetToken: resetToken }));
         this.zone.run(() => {
-            this.snackbar.open(this.CONFIRM_RESET_PASSWORD_SNACK_BAR_MESSAGE);
+            this.snackbar.open(this.CONFIRM_RESET_PASSWORD_SNACK_BAR_MESSAGE, undefined, { duration: 5000 });
         });
     }
 
