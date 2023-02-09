@@ -118,13 +118,10 @@ export class HttpErrorInterceptor<
      * @returns The message of the http-error.
      */
     protected getErrorDataMessage(error: HttpErrorResponse): string {
-        if (error.error != null) {
+        if (error.error != null && typeof error.error === 'object') {
             return this.getErrorDataMessage(error.error as HttpErrorResponse);
         }
 
-        if (typeof error === 'string') {
-            return error as string;
-        }
         if (error.message) {
             return error.message;
         }
