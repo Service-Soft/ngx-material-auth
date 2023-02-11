@@ -56,12 +56,12 @@ export class NgxMatAuthConfirmResetPasswordComponent<
     passwordInputLabel!: string;
 
     /**
-     * The label for the confirm password input.
+     * The minimum length for the password input.
      *
-     * @default 'Confirm Password'
+     * @default null // no minimum length
      */
     @Input()
-    confirmPasswordInputLabel!: string;
+    minLength!: number;
 
     /**
      * The label for the change password button.
@@ -121,11 +121,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
     password?: string;
 
     /**
-     * The confirm password input by the user.
-     */
-    confirmPassword?: string;
-
-    /**
      * Whether or not the password input is hidden.
      */
     hide: boolean = true;
@@ -175,28 +170,13 @@ export class NgxMatAuthConfirmResetPasswordComponent<
         this.getValidationErrorMessage = this.getValidationErrorMessage ?? this.defaultGetValidationErrorMessage;
         this.confirmResetPasswordTitle = this.confirmResetPasswordTitle ?? 'New Password';
         this.passwordInputLabel = this.passwordInputLabel ?? 'Password';
-        this.confirmPasswordInputLabel = this.confirmPasswordInputLabel ?? 'Confirm Password';
+        this.minLength = this.minLength ?? null;
         this.changePasswordButtonLabel = this.changePasswordButtonLabel ?? 'Change Password';
         this.cancelButtonLabel = this.cancelButtonLabel ?? 'Cancel';
         this.routeAfterReset = this.routeAfterReset ?? '/login';
         this.routeIfResetTokenInvalid = this.routeIfResetTokenInvalid ?? '/';
         this.routeForCancel = this.routeForCancel ?? this.routeAfterReset;
         this.invalidResetTokenErrorData = this.invalidResetTokenErrorData ?? this.defaultInvalidResetTokenErrorData;
-    }
-
-    /**
-     * Checks if the user input is invalid.
-     *
-     * @returns If the user input is invalid.
-     */
-    inputInvalid(): boolean {
-        if (!this.password) {
-            return true;
-        }
-        if (this.password !== this.confirmPassword) {
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -210,13 +190,7 @@ export class NgxMatAuthConfirmResetPasswordComponent<
      * Changes the password.
      */
     onSubmit(): void {
-        if (!this.password) {
-            return;
-        }
-        if (this.password !== this.confirmPassword) {
-            return;
-        }
-        this.authService.confirmResetPassword(this.password, this.resetToken as string)
+        this.authService.confirmResetPassword(this.password as string, this.resetToken as string)
             .then(() => {
                 this.resetInputFields();
                 void this.router.navigate([this.routeAfterReset]);
@@ -229,7 +203,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     private resetInputFields(): void {
         this.password = '';
-        this.confirmPassword = '';
         this.resetToken = '';
     }
 }
