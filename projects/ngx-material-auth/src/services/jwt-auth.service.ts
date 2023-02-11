@@ -172,14 +172,13 @@ export abstract class JwtAuthService<
 
     /**
      * Refreshes the token.
-     * No data is sent to the server as the jwt in the header already contains the necessary information.
      */
     async refreshToken(): Promise<void> {
         if (!this.authData) {
             return;
         }
         this.authData = await firstValueFrom(
-            this.http.post<AuthDataType>(this.API_REFRESH_TOKEN_URL, { refreshToken: this.authData.refreshToken })
+            this.http.post<AuthDataType>(this.API_REFRESH_TOKEN_URL, { refreshToken: this.authData.refreshToken.value })
         );
     }
 
