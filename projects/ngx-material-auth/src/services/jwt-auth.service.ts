@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { InjectionToken, NgZone } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
@@ -79,6 +80,12 @@ export abstract class JwtAuthService<
     abstract readonly API_LOGOUT_URL: string;
 
     /**
+     * When the user tries to access a route for which he doesn't have the permission and is logged out
+     * he gets redirected to this route afterwards.
+     */
+    protected readonly ROUTE_AFTER_LOGOUT: string = '/login';
+
+    /**
      * The default url for refresh token requests.
      */
     abstract readonly API_REFRESH_TOKEN_URL: string;
@@ -119,7 +126,8 @@ export abstract class JwtAuthService<
     constructor(
         protected readonly http: HttpClient,
         protected readonly snackbar: MatSnackBar,
-        protected readonly zone: NgZone
+        protected readonly zone: NgZone,
+        protected readonly router: Router
     ) {
         const stringData: string | null = localStorage.getItem(this.AUTH_DATA_KEY);
         const authData: AuthDataType | undefined = stringData ? JSON.parse(stringData) as AuthDataType : undefined;
@@ -168,6 +176,7 @@ export abstract class JwtAuthService<
         }
         await firstValueFrom(this.http.post<void>(this.API_LOGOUT_URL, { refreshToken: this.authData.refreshToken.value }));
         this.authData = undefined;
+        void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
     }
 
     /**
