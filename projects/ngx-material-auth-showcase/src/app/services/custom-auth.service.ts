@@ -3,6 +3,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { BaseAuthData, BaseRole, BaseToken, JwtAuthService } from 'ngx-material-auth';
 import { environment } from '../../environments/environment';
 
@@ -29,10 +30,11 @@ export class CustomAuthService extends JwtAuthService<CustomAuthData, Roles, Bas
     readonly API_VERIFY_RESET_PASSWORD_TOKEN_URL: string = `${environment.apiUrl}/verify-password-reset-token`;
 
     constructor(
-        protected readonly httpClient: HttpClient,
-        protected readonly matSnackBar: MatSnackBar,
-        protected readonly ngZone: NgZone
+        httpClient: HttpClient,
+        matSnackBar: MatSnackBar,
+        ngZone: NgZone,
+        router: Router
     ) {
-        super(httpClient, matSnackBar, ngZone);
+        super(httpClient, matSnackBar, ngZone, router);
     }
 }

@@ -18,7 +18,7 @@
                 name="password"
                 #pw="ngModel"
                 required>
-            <button (click)="hide = !hide" mat-icon-button matSuffix>
+            <button type="button" (click)="hide = !hide" mat-icon-button matSuffix>
                 <i *ngIf="hide" class="fas fa-eye-slash"></i>
                 <i *ngIf="!hide" class="fas fa-eye"></i>
             </button>
