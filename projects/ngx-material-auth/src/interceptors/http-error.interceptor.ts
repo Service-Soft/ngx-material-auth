@@ -1,14 +1,14 @@
+import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest, HttpStatusCode } from '@angular/common/http';
+import { Inject, Injectable } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
-import { HttpInterceptor, HttpEvent, HttpHandler, HttpRequest, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
-import { JwtAuthService, NGX_AUTH_SERVICE } from '../services/jwt-auth.service';
+import { catchError, Observable, throwError } from 'rxjs';
+import { NgxMatAuthErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
 import { BaseAuthData } from '../models/base-auth-data.model';
+import { BaseRole } from '../models/base-role.model';
 import { BaseToken } from '../models/base-token.model';
 import { ErrorData } from '../models/error-data.model';
-import { NgxMatAuthErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
-import { MatDialog } from '@angular/material/dialog';
-import { Inject, Injectable } from '@angular/core';
-import { BaseRole } from '../models/base-role.model';
+import { JwtAuthService, NGX_AUTH_SERVICE } from '../services/jwt-auth.service';
 
 /**
  * Interceptor that does error handling for http requests.
@@ -21,11 +21,6 @@ export class HttpErrorInterceptor<
     Role extends BaseRole<RoleValue>,
     AuthServiceType extends JwtAuthService<AuthDataType, RoleValue, Role, TokenType>
 > implements HttpInterceptor {
-
-    /**
-     * The route to which the user gets redirected to after he triggers an error which should log him out (eg. 401 Unauthorized).
-     */
-    protected readonly ROUTE_AFTER_LOGOUT: string = '/';
 
     /**
      * The message to display when the user has no internet connection.
@@ -71,9 +66,7 @@ export class HttpErrorInterceptor<
         return next.handle(request).pipe(
             catchError((error: HttpErrorResponse) => {
                 if (this.userShouldBeLoggedOut(error, request)) {
-                    void this.authService.logout().then(() => {
-                        void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
-                    });
+                    void this.authService.logout();
                 }
                 if (this.errorDialogShouldBeDisplayed(error, request)) {
                     const errorData: ErrorData = { name: 'HTTP-Error', message: this.getErrorDataMessage(error) };

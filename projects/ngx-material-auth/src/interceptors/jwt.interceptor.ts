@@ -1,6 +1,6 @@
 import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Inject, Injectable, InjectionToken } from '@angular/core';
-import { from, lastValueFrom, Observable } from 'rxjs';
+import { firstValueFrom, from, Observable } from 'rxjs';
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
 import { BaseToken } from '../models/base-token.model';
@@ -62,7 +62,7 @@ export class JwtInterceptor<
         if (this.requestDoesNotRequireToken(request)) {
             return next.handle(request);
         }
-        if (this.tokenNeedsToBeRefreshed()) {
+        if (this.tokenNeedsToBeRefreshed(request)) {
             return from(this.refreshAndHandle(request, next));
         }
         request = request.clone({
@@ -75,14 +75,13 @@ export class JwtInterceptor<
 
     /**
      * Check if the intercepted request is one of the special cases where no token is required.
-     * By default these are the refresh and the logout request.
      *
      * @param request - The http-request that was intercepted.
      * @returns Whether or not the intercepted request is one of the special cases where no token is required.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected requestDoesNotRequireToken(request: HttpRequest<unknown>): boolean {
-        return request.url === this.authService.API_REFRESH_TOKEN_URL
-            || request.url === this.authService.API_LOGOUT_URL;
+        return false;
     }
 
     /**
@@ -99,15 +98,22 @@ export class JwtInterceptor<
                 authorization: `Bearer ${this.authService.authData?.accessToken.value}`
             }
         });
-        return await lastValueFrom(next.handle(request));
+        return await firstValueFrom(next.handle(request));
     }
 
     /**
      * Checks whether or not the token needs to be refreshed.
      *
+     * @param request - The request to check.
      * @returns Whether or not the token needs to be refreshed.
      */
-    protected tokenNeedsToBeRefreshed(): boolean {
+    protected tokenNeedsToBeRefreshed(request: HttpRequest<unknown>): boolean {
+        if (
+            request.url === this.authService.API_REFRESH_TOKEN_URL
+            || request.url === this.authService.API_LOGOUT_URL
+        ) {
+            return false;
+        }
         const tokenExpirationDate: Date = new Date(this.authService.authData?.accessToken.expirationDate as Date);
         const expirationInMs: number = tokenExpirationDate.getTime();
         return expirationInMs <= Date.now();
