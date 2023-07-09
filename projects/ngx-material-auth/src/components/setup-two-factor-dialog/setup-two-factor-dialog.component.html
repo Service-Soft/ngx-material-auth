@@ -1,0 +1,28 @@
+<b mat-dialog-title>{{data.title}}</b>
+
+<mat-dialog-content>
+    <p *ngFor="let paragraph of data.description">
+        {{paragraph}}
+    </p>
+
+    <!-- QR Code //TODO -->
+    <div class="qr-container">
+        <canvas id="2fa-canvas">
+        </canvas>
+    </div>
+
+    <div class="secret-container">
+        <b>{{data.secretLabel}}: </b>
+        <br>
+        {{secret}}
+    </div>
+
+    <!-- Verification Code //TODO -->
+    <b>{{data.verificationCodeLabel}}</b>
+    <ngx-mat-auth-two-factor-code-input (codeChangeEvent)="verificationCode = $event"></ngx-mat-auth-two-factor-code-input>
+
+    <div class="dialog-actions">
+        <button class="confirm-button" [disabled]="verificationCode.length !== 6" type="button" mat-raised-button (click)="confirm()">{{data.confirmButtonLabel}}</button>
+        <button class="cancel-button" type="button" mat-raised-button (click)="cancel()">{{data.cancelButtonLabel}}</button>
+    </div>
+</mat-dialog-content>

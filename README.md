@@ -25,6 +25,7 @@ This includes:
 - [HTTP-Error Interceptor](#http-error-interceptor)
   - [Usage](#usage-2)
   - [Api](#api-2)
+- [Two Factor Interceptor](#two-factor-interceptor)
 - [JwtLoggedInGuard](#jwtloggedinguard)
   - [Usage](#usage-3)
   - [Api](#api-3)
@@ -737,6 +738,8 @@ export class HttpErrorInterceptor<
     }
 }
 ```
+
+# Two Factor Interceptor
 
 # JwtLoggedInGuard
 This can be used straight out of the box if you have [registered your authService](#override-the-injection-token).

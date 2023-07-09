@@ -1,0 +1,14 @@
+<b mat-dialog-title>{{data.title}}</b>
+
+<mat-dialog-content>
+    <p *ngFor="let paragraph of data.description">
+        {{paragraph}}
+    </p>
+
+    <ngx-mat-auth-two-factor-code-input (codeChangeEvent)="code = $event"></ngx-mat-auth-two-factor-code-input>
+
+    <div class="dialog-actions">
+        <button class="confirm-button" [disabled]="code.length !== 6" type="button" mat-raised-button (click)="confirm()">{{data.confirmButtonLabel}}</button>
+        <button class="cancel-button" type="button" mat-raised-button (click)="cancel()">{{data.cancelButtonLabel}}</button>
+    </div>
+</mat-dialog-content>

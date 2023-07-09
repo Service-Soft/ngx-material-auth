@@ -1,6 +1,6 @@
 import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Inject, Injectable, InjectionToken } from '@angular/core';
-import { firstValueFrom, from, Observable } from 'rxjs';
+import { Observable, firstValueFrom, from } from 'rxjs';
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
 import { BaseToken } from '../models/base-token.model';

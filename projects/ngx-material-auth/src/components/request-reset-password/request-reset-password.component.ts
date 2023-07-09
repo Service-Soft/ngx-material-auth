@@ -1,5 +1,9 @@
+import { NgIf } from '@angular/common';
 import { Component, Inject, Input, OnInit } from '@angular/core';
-import { NgModel } from '@angular/forms';
+import { FormsModule, NgModel } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseRole } from '../../models/base-role.model';
@@ -13,7 +17,15 @@ import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-messag
 @Component({
     selector: 'ngx-mat-auth-request-reset-password',
     templateUrl: './request-reset-password.component.html',
-    styleUrls: ['./request-reset-password.component.scss']
+    styleUrls: ['./request-reset-password.component.scss'],
+    standalone: true,
+    imports: [
+        NgIf,
+        FormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatButtonModule
+    ]
 })
 export class NgxMatAuthRequestResetPasswordComponent<
     AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,

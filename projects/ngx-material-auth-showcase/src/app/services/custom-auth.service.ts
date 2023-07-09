@@ -2,6 +2,7 @@
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { BaseAuthData, BaseRole, BaseToken, JwtAuthService } from 'ngx-material-auth';
@@ -28,13 +29,16 @@ export class CustomAuthService extends JwtAuthService<CustomAuthData, Roles, Bas
     readonly API_REQUEST_RESET_PASSWORD_URL: string = `${environment.apiUrl}/request-reset-password`;
     readonly API_CONFIRM_RESET_PASSWORD_URL: string = `${environment.apiUrl}/confirm-reset-password`;
     readonly API_VERIFY_RESET_PASSWORD_TOKEN_URL: string = `${environment.apiUrl}/verify-password-reset-token`;
+    override readonly API_TURN_ON_TWO_FACTOR_URL: string = `${environment.apiUrl}/2fa/turn-on`;
+    override readonly API_CONFIRM_TURN_ON_TWO_FACTOR_URL: string = `${environment.apiUrl}/2fa/confirm-turn-on`;
 
     constructor(
         httpClient: HttpClient,
         matSnackBar: MatSnackBar,
         ngZone: NgZone,
-        router: Router
+        router: Router,
+        dialog: MatDialog
     ) {
-        super(httpClient, matSnackBar, ngZone, router);
+        super(httpClient, matSnackBar, ngZone, router, dialog);
     }
 }

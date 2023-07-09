@@ -1,6 +1,10 @@
+import { NgIf } from '@angular/common';
 import { Component, Inject, Input, OnInit } from '@angular/core';
-import { NgModel } from '@angular/forms';
-import { Router } from '@angular/router';
+import { FormsModule, NgModel } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { Router, RouterModule } from '@angular/router';
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseRole } from '../../models/base-role.model';
 import { BaseToken } from '../../models/base-token.model';
@@ -31,7 +35,16 @@ export interface ForgotPasswordLinkData {
 @Component({
     selector: 'ngx-mat-auth-login',
     templateUrl: './login.component.html',
-    styleUrls: ['./login.component.scss']
+    styleUrls: ['./login.component.scss'],
+    standalone: true,
+    imports: [
+        NgIf,
+        FormsModule,
+        MatFormFieldModule,
+        RouterModule,
+        MatInputModule,
+        MatButtonModule
+    ]
 })
 export class NgxMatAuthLoginComponent<
     AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,

@@ -1,6 +1,10 @@
+import { NgIf } from '@angular/common';
 import { Component, Inject, Input, NgZone, OnInit } from '@angular/core';
-import { NgModel } from '@angular/forms';
+import { FormsModule, NgModel } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { BaseAuthData } from '../../models/base-auth-data.model';
@@ -23,7 +27,16 @@ import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-messag
 @Component({
     selector: 'ngx-mat-auth-confirm-reset-password',
     templateUrl: './confirm-reset-password.component.html',
-    styleUrls: ['./confirm-reset-password.component.scss']
+    styleUrls: ['./confirm-reset-password.component.scss'],
+    standalone: true,
+    imports: [
+        NgIf,
+        FormsModule,
+        MatInputModule,
+        MatFormFieldModule,
+        MatButtonModule,
+        NgxMatAuthErrorDialogComponent
+    ]
 })
 export class NgxMatAuthConfirmResetPasswordComponent<
     AuthDataType extends BaseAuthData<TokenType, RoleValue, Role>,
