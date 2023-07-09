@@ -1,6 +1,6 @@
 {
     "name": "ngx-material-auth",
-    "version": "15.0.6",
+    "version": "15.0.7",
     "license": "MIT",
     "keywords": [
         "angular",
@@ -16,7 +16,8 @@
         "@angular/common": "15",
         "@angular/core": "15",
         "@angular/forms": "15",
-        "@angular/material": "15"
+        "@angular/material": "15",
+        "qrcode": "^1.5.3"
     },
     "dependencies": {
         "tslib": "^2.4.0"

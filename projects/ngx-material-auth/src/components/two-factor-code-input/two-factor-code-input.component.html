@@ -1,0 +1,80 @@
+<div class="code-container">
+    <input matInput
+        id="code1"
+        [(ngModel)]="one"
+        [class.valid]="one"
+        minlength="1"
+        maxlength="1"
+        pattern="[0-9]"
+        (keyup)="keyup($event, 1)"
+        (focus)="focused(1)"
+        (paste)="paste($event)"
+        oninput="validity.valid || (value='');"
+        autofocus
+    >
+    <input matInput
+        id="code2"
+        [(ngModel)]="two"
+        [class.valid]="two"
+        minlength="1"
+        maxlength="1"
+        pattern="[0-9]"
+        (keyup)="keyup($event, 2)"
+        (focus)="focused(2)"
+        (paste)="paste($event)"
+        oninput="validity.valid || (value='');"
+        autofocus
+    >
+    <input matInput
+        id="code3"
+        [(ngModel)]="three"
+        [class.valid]="three"
+        minlength="1"
+        maxlength="1"
+        pattern="[0-9]"
+        (keyup)="keyup($event, 3)"
+        (focus)="focused(3)"
+        (paste)="paste($event)"
+        oninput="validity.valid || (value='');"
+        autofocus
+    >
+    <input matInput
+        id="code4"
+        [(ngModel)]="four"
+        [class.valid]="four"
+        minlength="1"
+        maxlength="1"
+        pattern="[0-9]"
+        (keyup)="keyup($event, 4)"
+        (focus)="focused(4)"
+        (paste)="paste($event)"
+        oninput="validity.valid || (value='');"
+        autofocus
+    >
+    <input matInput
+        id="code5"
+        [(ngModel)]="five"
+        [class.valid]="five"
+        minlength="1"
+        maxlength="1"
+        pattern="[0-9]"
+        (keyup)="keyup($event, 5)"
+        (focus)="focused(5)"
+        (paste)="paste($event)"
+        oninput="validity.valid || (value='');"
+        autofocus
+    >
+    <input matInput
+        id="code6"
+        [(ngModel)]="six"
+        [class.valid]="six"
+        minlength="1"
+        maxlength="1"
+        pattern="[0-9]"
+        (keyup)="keyup($event, 6)"
+        (focus)="focused(6)"
+        (paste)="paste($event)"
+        oninput="validity.valid || (value='');"
+        autofocus
+    >
+</div>

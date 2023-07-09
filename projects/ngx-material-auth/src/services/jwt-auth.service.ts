@@ -1,8 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { InjectionToken, NgZone } from '@angular/core';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
+import { NgxMatAuthSetupTwoFactorDialogComponent } from '../components/setup-two-factor-dialog/setup-two-factor-dialog.component';
+import { SetupTwoFactorDialogConfig } from '../components/setup-two-factor-dialog/setup-two-factor-dialog.config';
+import { NgxMatAuthTwoFactorDialogComponent } from '../components/two-factor-dialog/two-factor-dialog.component';
+import { TwoFactorDialogConfig } from '../components/two-factor-dialog/two-factor.dialog.config';
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
 import { BaseToken } from '../models/base-token.model';
@@ -25,6 +30,26 @@ export const NGX_AUTH_SERVICE = new InjectionToken(
 
 const ONE_HUNDRED_DAYS_IN_MS: number = 8640000000;
 const HOUR_IN_MS: number = 3600000;
+
+/**
+ * The response with the qr code url to enable 2fa.
+ */
+interface TwoFactorUrlResponse {
+    /**
+     * The totp qr code url.
+     */
+    url: string
+}
+
+/**
+ * The response that is sent when logging in requires a 2fa code.
+ */
+interface RequireTwoFactorResponse {
+    /**
+     * Notice that the login process requires a 2fa code.
+     */
+    require2fa: boolean
+}
 
 /**
  * The base class for an authentication service.
@@ -70,6 +95,11 @@ export abstract class JwtAuthService<
     readonly CONFIRM_RESET_PASSWORD_SNACK_BAR_MESSAGE: string = 'Password changed successfully!';
 
     /**
+     * The name of the custom header that is used to transport two factor codes.
+     */
+    readonly TWO_FACTOR_HEADER: string = 'X-Authorization-2FA';
+
+    /**
      * The default url for login requests.
      */
     abstract readonly API_LOGIN_URL: string;
@@ -105,6 +135,15 @@ export abstract class JwtAuthService<
      */
     abstract readonly API_VERIFY_RESET_PASSWORD_TOKEN_URL: string;
 
+    /**
+     * The api url for turning on two factor authentication. Needs to return a qr code url.
+     */
+    abstract readonly API_TURN_ON_TWO_FACTOR_URL: string;
+    /**
+     * The api url to confirm turning on two factor authentication.
+     */
+    abstract readonly API_CONFIRM_TURN_ON_TWO_FACTOR_URL: string;
+
     // eslint-disable-next-line jsdoc/require-returns
     /**
      * The currently stored authData value.
@@ -114,20 +153,21 @@ export abstract class JwtAuthService<
         return this.authDataSubject.value;
     }
     // eslint-disable-next-line jsdoc/require-jsdoc
-    set authData(authData: AuthDataType | undefined) {
-        authData = this.transformAuthDataBeforeSetting(authData);
-        localStorage.setItem(this.AUTH_DATA_KEY, JSON.stringify(authData));
-        if (!authData) {
+    set authData(value: AuthDataType | undefined) {
+        value = this.transformAuthDataBeforeSetting(value);
+        localStorage.setItem(this.AUTH_DATA_KEY, JSON.stringify(value));
+        if (!value) {
             localStorage.removeItem(this.AUTH_DATA_KEY);
         }
-        this.authDataSubject.next(authData);
+        this.authDataSubject.next(value);
     }
 
     constructor(
         protected readonly http: HttpClient,
         protected readonly snackbar: MatSnackBar,
         protected readonly zone: NgZone,
-        protected readonly router: Router
+        protected readonly router: Router,
+        protected readonly dialog: MatDialog
     ) {
         const stringData: string | null = localStorage.getItem(this.AUTH_DATA_KEY);
         const authData: AuthDataType | undefined = stringData ? JSON.parse(stringData) as AuthDataType : undefined;
@@ -163,19 +203,51 @@ export abstract class JwtAuthService<
      * @returns A promise of the received authData.
      */
     async login(loginData: LoginData): Promise<AuthDataType> {
-        this.authData = await firstValueFrom(this.http.post<AuthDataType>(this.API_LOGIN_URL, loginData));
+        const res: AuthDataType | RequireTwoFactorResponse = await firstValueFrom(
+            this.http.post<AuthDataType | RequireTwoFactorResponse>(this.API_LOGIN_URL, loginData)
+        );
+        if (this.isAuthDataType(res)) {
+            this.authData = res;
+            return this.authData;
+        }
+        const code: string | undefined = await this.openInput2FADialog();
+        if (!code) {
+            throw new Error('No two factor code has been provided.');
+        }
+        this.authData = await firstValueFrom(
+            this.http.post<AuthDataType>(this.API_LOGIN_URL, loginData, { headers: { [this.TWO_FACTOR_HEADER]: code } })
+        );
         return this.authData;
     }
 
     /**
-     * Logout the current user.
+     * Opens a two factor dialog with the given configuration data and returns the code that has been input.
+     *
+     * @param data - Configuration data for the dialog.
+     * @returns The input two factor code or undefined if the dialog was closed with cancel.
+     */
+    async openInput2FADialog(data?: Partial<TwoFactorDialogConfig>): Promise<string | undefined> {
+        const dialogRef: MatDialogRef<NgxMatAuthTwoFactorDialogComponent> = this.dialog.open(
+            NgxMatAuthTwoFactorDialogComponent,
+            { data: data, disableClose: true, restoreFocus: false }
+        );
+        return firstValueFrom<string | undefined>(dialogRef.afterClosed() as Observable<string | undefined>);
+    }
+
+    private isAuthDataType(value: AuthDataType | RequireTwoFactorResponse): value is AuthDataType {
+        return !!(value as AuthDataType).userId;
+    }
+
+    /**
+     * Logout the current user.o.
      */
     async logout(): Promise<void> {
         if (!this.authData) {
             return;
         }
-        await firstValueFrom(this.http.post<void>(this.API_LOGOUT_URL, { refreshToken: this.authData.refreshToken.value }));
+        const refreshTokenValue: string = this.authData.refreshToken.value;
         this.authData = undefined;
+        await firstValueFrom(this.http.post<void>(this.API_LOGOUT_URL, { refreshToken: refreshTokenValue }));
         void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
     }
 
@@ -243,5 +315,44 @@ export abstract class JwtAuthService<
             return true;
         }
         return false;
+    }
+
+    /**
+     * Generates a qr code url to setup 2fa in eg. Google Authenticator.
+     *
+     * @returns The response with the qr code url.
+     */
+    async turnOn2FA(): Promise<TwoFactorUrlResponse> {
+        return await firstValueFrom(this.http.post<TwoFactorUrlResponse>(this.API_TURN_ON_TWO_FACTOR_URL, undefined));
+    }
+
+    /**
+     * Opens the dialog to turn on 2fa. The dialog displays a qr code and an input to confirm with a two factor code.
+     *
+     * @param data - Configuration data for the dialog.
+     */
+    openTurnOn2FADialog(data?: Partial<SetupTwoFactorDialogConfig>): void {
+        this.dialog.open(NgxMatAuthSetupTwoFactorDialogComponent, { data: data, disableClose: true, restoreFocus: false });
+    }
+
+    /**
+     * Confirms turning on two factor authentication.
+     * Sends the provided two factor code to the configured endpoint.
+     *
+     * @param twoFactorCode - The two factor code that the user generated using eg. Google Authenticator.
+     */
+    async confirmTurnOn2FA(twoFactorCode: string): Promise<void> {
+        await firstValueFrom(
+            this.http.post<void>(
+                this.API_CONFIRM_TURN_ON_TWO_FACTOR_URL,
+                undefined,
+                { headers: { [this.TWO_FACTOR_HEADER]: twoFactorCode } }
+            )
+        );
+        // @ts-ignore
+        this.authData = {
+            ...this.authData,
+            twoFactorEnabled: true
+        };
     }
 }

@@ -1,3 +1,4 @@
+<!-- eslint-disable @angular-eslint/template/no-call-expression -->
 <div class="mat-elevation-z8 login-box">
     <i class="title-icon fas fa-circle-user"></i>
     <h1>{{loginTitle}}</h1>
@@ -27,7 +28,7 @@
 
         <br>
 
-        <button class="login-button" mat-raised-button [disabled]="formControl.invalid">
+        <button type="submit" class="login-button" mat-raised-button [disabled]="formControl.invalid">
             {{loginButtonLabel}}
         </button>
         <br>

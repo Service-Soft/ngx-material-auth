@@ -1,13 +1,13 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ConfirmResetPasswordComponent } from './confirm-reset-password.component';
-import { NgxMatAuthConfirmResetPasswordModule } from 'ngx-material-auth';
+import { NgModule } from '@angular/core';
+import { NgxMatAuthConfirmResetPasswordComponent } from 'ngx-material-auth';
 import { ConfirmResetPasswordRoutingModule } from './confirm-reset-password-routing.module';
+import { ConfirmResetPasswordComponent } from './confirm-reset-password.component';
 
 @NgModule({
     imports: [
         CommonModule,
-        NgxMatAuthConfirmResetPasswordModule,
+        NgxMatAuthConfirmResetPasswordComponent,
         ConfirmResetPasswordRoutingModule
     ],
     declarations: [ConfirmResetPasswordComponent]

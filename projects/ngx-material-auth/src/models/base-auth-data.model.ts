@@ -1,5 +1,5 @@
-import { BaseToken } from './base-token.model';
 import { BaseRole } from './base-role.model';
+import { BaseToken } from './base-token.model';
 
 /**
  * The minimum values for authData.
@@ -23,5 +23,9 @@ export interface BaseAuthData<Token extends BaseToken, RoleValue extends string,
     /**
      * The id of the currently logged in user.
      */
-    userId: string
+    userId: string,
+    /**
+     * Whether or not two factor authentication is enabled.
+     */
+    twoFactorEnabled?: boolean
 }
