@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest
 import { Inject, Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
-import { catchError, Observable, throwError } from 'rxjs';
+import { Observable, catchError, throwError } from 'rxjs';
 import { NgxMatAuthErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
@@ -44,7 +44,10 @@ export class HttpErrorInterceptor<
      * Any api urls for which the user shouldn't be logged out.
      * Eg. The login page.
      */
-    protected readonly apiUrlsWithNoLogout: string[] = [];
+    protected readonly apiUrlsWithNoLogout: string[] = [
+        this.authService.API_TURN_ON_TWO_FACTOR_URL,
+        this.authService.API_CONFIRM_TURN_ON_TWO_FACTOR_URL
+    ];
 
     constructor(
         protected readonly router: Router,

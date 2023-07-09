@@ -1,0 +1,27 @@
+$input-border-size: 2px;
+
+input {
+    caret-color: rgba(0, 0, 0, 0.6);
+    flex: 1 1 0px;
+    width: 0;
+    border: $input-border-size solid rgba(0, 0, 0, 0.6);
+    border-radius: 5px;
+    text-align: center;
+    padding: 5px;
+    background-color: #F5F5F5;
+}
+
+input:focus {
+    outline: $input-border-size solid rgba(0, 128, 0, 0.6);
+    border-color: rgba(0, 128, 0, 0.6);
+}
+
+.code-container {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+}
+
+.valid {
+    border: $input-border-size solid rgba(0, 128, 0, 0.6);
+}
