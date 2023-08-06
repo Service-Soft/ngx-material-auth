@@ -141,7 +141,7 @@ export class NgxMatAuthLoginComponent<
         this.passwordInputLabel = this.passwordInputLabel ?? 'Password';
         this.loginButtonLabel = this.loginButtonLabel ?? 'Login';
         // eslint-disable-next-line max-len
-        this.forgotPasswordLinkData = this.forgotPasswordLinkData ?? { displayName: 'Forgot your password?', route: '/request-reset-password' };
+        this.forgotPasswordLinkData = this.forgotPasswordLinkData ?? { displayName: 'Forgot your password?', route: this.authService.REQUEST_RESET_PASSWORD_ROUTE };
         this.routeAfterLogin = this.routeAfterLogin ?? '/';
     }
 

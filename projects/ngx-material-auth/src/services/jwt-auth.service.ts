@@ -4,6 +4,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
+import { NgxMatAuthErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
 import { NgxMatAuthSetupTwoFactorDialogComponent } from '../components/setup-two-factor-dialog/setup-two-factor-dialog.component';
 import { SetupTwoFactorDialogConfig } from '../components/setup-two-factor-dialog/setup-two-factor-dialog.config';
 import { NgxMatAuthTwoFactorDialogComponent } from '../components/two-factor-dialog/two-factor-dialog.component';
@@ -11,6 +12,7 @@ import { TwoFactorDialogConfig } from '../components/two-factor-dialog/two-facto
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
 import { BaseToken } from '../models/base-token.model';
+import { ErrorData } from '../models/error-data.model';
 import { LoginData } from '../models/login-data.model';
 
 // eslint-disable-next-line @typescript-eslint/typedef
@@ -52,6 +54,26 @@ interface RequireTwoFactorResponse {
 }
 
 /**
+ * The Response vor verifying a password reset token.
+ */
+interface VerifyResetTokenResponse {
+    /**
+     * Whether or not the provided reset token is valid.s.
+     */
+    isValid: boolean
+}
+
+/**
+ * The response sent to a user logging in when he is required to change his password.
+ */
+interface RequirePasswordChangeResponse {
+    /**
+     * Whether or not the user is required to change his password.
+     */
+    requirePasswordChange: boolean
+}
+
+/**
  * The base class for an authentication service.
  */
 export abstract class JwtAuthService<
@@ -83,6 +105,11 @@ export abstract class JwtAuthService<
      * @default 8640000000 // 100 days
      */
     readonly REFRESH_TOKEN_DURATION_IN_MS: number = ONE_HUNDRED_DAYS_IN_MS;
+
+    /**
+     * The route for requesting a password change.
+     */
+    readonly REQUEST_RESET_PASSWORD_ROUTE: string = '/request-reset-password';
 
     /**
      * The message to display inside a snackbar when the mail for resetting a password was sent successfully.
@@ -203,12 +230,17 @@ export abstract class JwtAuthService<
      * @returns A promise of the received authData.
      */
     async login(loginData: LoginData): Promise<AuthDataType> {
-        const res: AuthDataType | RequireTwoFactorResponse = await firstValueFrom(
-            this.http.post<AuthDataType | RequireTwoFactorResponse>(this.API_LOGIN_URL, loginData)
+        const res: AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse = await firstValueFrom(
+            this.http.post<AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse>(this.API_LOGIN_URL, loginData)
         );
         if (this.isAuthDataType(res)) {
             this.authData = res;
             return this.authData;
+        }
+        if (this.isRequirePasswordChangeType(res)) {
+            await this.openChangePasswordDialog();
+            await this.router.navigateByUrl(this.REQUEST_RESET_PASSWORD_ROUTE);
+            throw new Error('You are required to reset your password.');
         }
         const code: string | undefined = await this.openInput2FADialog();
         if (!code) {
@@ -218,6 +250,23 @@ export abstract class JwtAuthService<
             this.http.post<AuthDataType>(this.API_LOGIN_URL, loginData, { headers: { [this.TWO_FACTOR_HEADER]: code } })
         );
         return this.authData;
+    }
+
+    private async openChangePasswordDialog(): Promise<void> {
+        const data: ErrorData = {
+            name: 'Password change required',
+            message: 'You are required to reset your password.'
+        };
+        const dialogRef: MatDialogRef<NgxMatAuthErrorDialogComponent> = this.dialog.open(
+            NgxMatAuthErrorDialogComponent,
+            { data: data, disableClose: true, restoreFocus: false }
+        );
+        await firstValueFrom<void>(dialogRef.afterClosed() as Observable<void>);
+    }
+
+    // eslint-disable-next-line max-len
+    private isRequirePasswordChangeType(res: RequireTwoFactorResponse | RequirePasswordChangeResponse): res is RequirePasswordChangeResponse {
+        return !!(res as RequirePasswordChangeResponse).requirePasswordChange;
     }
 
     /**
@@ -234,7 +283,7 @@ export abstract class JwtAuthService<
         return firstValueFrom<string | undefined>(dialogRef.afterClosed() as Observable<string | undefined>);
     }
 
-    private isAuthDataType(value: AuthDataType | RequireTwoFactorResponse): value is AuthDataType {
+    private isAuthDataType(value: AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse): value is AuthDataType {
         return !!(value as AuthDataType).userId;
     }
 
@@ -296,9 +345,10 @@ export abstract class JwtAuthService<
      * @returns Whether or not the given token is valid.
      */
     async isResetTokenValid(resetToken: string): Promise<boolean> {
-        return await firstValueFrom(
-            this.http.post<boolean>(this.API_VERIFY_RESET_PASSWORD_TOKEN_URL, { value: resetToken })
+        const res: VerifyResetTokenResponse = await firstValueFrom(
+            this.http.post<VerifyResetTokenResponse>(this.API_VERIFY_RESET_PASSWORD_TOKEN_URL, { value: resetToken })
         );
+        return res.isValid;
     }
 
     /**
