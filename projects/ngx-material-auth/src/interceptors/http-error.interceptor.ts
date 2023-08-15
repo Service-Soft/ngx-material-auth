@@ -40,6 +40,7 @@ export class HttpErrorInterceptor<
         HttpStatusCode.Forbidden
     ];
 
+    // eslint-disable-next-line jsdoc/require-returns
     /**
      * Any api urls for which the user shouldn't be logged out.
      * Eg. The login page.
@@ -48,8 +49,8 @@ export class HttpErrorInterceptor<
         return [
             this.authService.API_TURN_ON_TWO_FACTOR_URL,
             this.authService.API_CONFIRM_TURN_ON_TWO_FACTOR_URL
-        ]
-    };
+        ];
+    }
 
     constructor(
         protected readonly router: Router,
