@@ -26,7 +26,7 @@ app.post('/refresh-token', function (req, res, next) {
 })
 
 app.post('/2fa/turn-on', function (req, res, next) {
-    res.json('otpauth://totp/ngx-material-auth?secret=secret');
+    res.json({ url: 'otpauth://totp/ngx-material-auth?secret=secret' });
 })
 
 app.post('/2fa/confirm-turn-on', function (req, res, next) {

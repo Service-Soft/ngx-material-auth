@@ -5,6 +5,9 @@ import { CustomAuthData, CustomAuthService, Roles } from '../../services/custom-
 
 type UserIds = '1' | '2';
 
+const expirationDate: Date = new Date(Date.now() + 1 * 24 * 60 * 60 * 60);
+const expirationDateRefreshToken: Date = new Date(Date.now() + 5 * 24 * 60 * 60 * 60);
+
 const userAuthData: CustomAuthData[] = [
     {
         superUser: false,
@@ -18,12 +21,12 @@ const userAuthData: CustomAuthData[] = [
         accessToken: {
             additionalValue: 'User #1',
             value: 'my-token-1',
-            expirationDate: new Date()
+            expirationDate: expirationDate
         },
         refreshToken: {
             additionalValue: 'User #1',
             value: 'my-refresh-token-1',
-            expirationDate: new Date()
+            expirationDate: expirationDateRefreshToken
         }
     },
     {
@@ -33,12 +36,12 @@ const userAuthData: CustomAuthData[] = [
         accessToken: {
             additionalValue: 'User #2',
             value: 'my-token-2',
-            expirationDate: new Date()
+            expirationDate: expirationDate
         },
         refreshToken: {
             additionalValue: 'User #2',
             value: 'my-refresh-token-2',
-            expirationDate: new Date()
+            expirationDate: expirationDateRefreshToken
         }
     }
 ];
