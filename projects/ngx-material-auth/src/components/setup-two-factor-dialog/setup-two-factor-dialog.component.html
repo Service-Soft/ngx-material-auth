@@ -22,7 +22,7 @@
     <ngx-mat-auth-two-factor-code-input (codeChangeEvent)="verificationCode = $event"></ngx-mat-auth-two-factor-code-input>
 
     <div class="dialog-actions">
-        <button class="confirm-button" [disabled]="verificationCode.length !== 6" type="button" mat-raised-button (click)="confirm()">{{data.confirmButtonLabel}}</button>
+        <button class="confirm-button" type="button" mat-raised-button [disabled]="verificationCode.length !== 6" (click)="confirm()">{{data.confirmButtonLabel}}</button>
         <button class="cancel-button" type="button" mat-raised-button (click)="cancel()">{{data.cancelButtonLabel}}</button>
     </div>
 </mat-dialog-content>

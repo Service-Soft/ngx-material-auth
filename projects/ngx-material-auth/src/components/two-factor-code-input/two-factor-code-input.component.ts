@@ -50,7 +50,6 @@ export class NgxMatAuthTwoFactorCodeInputComponent {
     /**
      * When the user uses the backspace, the previous input is selected (if it exists).
      * When he types anything else, the next input is selected (if it exists).
-     *
      * @param event - The keyboard event contains eg. The key that was pressed.
      * @param step - At which step the input happened.
      */
@@ -73,7 +72,6 @@ export class NgxMatAuthTwoFactorCodeInputComponent {
 
     /**
      * Sets all code inputs to the first six digits provided by the pasted content.
-     *
      * @param event - The clipboard event with all relevant information.
      */
     paste(event: ClipboardEvent): void {
@@ -101,7 +99,6 @@ export class NgxMatAuthTwoFactorCodeInputComponent {
     /**
      * Automatically moves the cursor to the correct input.
      * If eg. The first value hasn't been provided yet the user can't click on the input for the last value.
-     *
      * @param step - The step that the user tries to focus.
      */
     focused(step: number): void {

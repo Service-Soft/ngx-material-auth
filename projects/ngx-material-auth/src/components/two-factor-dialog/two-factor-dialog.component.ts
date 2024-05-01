@@ -2,8 +2,9 @@ import { NgFor } from '@angular/common';
 import { Component, Inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { NgxMatAuthTwoFactorCodeInputComponent } from '../two-factor-code-input/two-factor-code-input.component';
+
 import { TwoFactorDialogConfig } from './two-factor.dialog.config';
+import { NgxMatAuthTwoFactorCodeInputComponent } from '../two-factor-code-input/two-factor-code-input.component';
 
 /**
  * A dialog to input a two factor code.
@@ -41,9 +42,7 @@ export class NgxMatAuthTwoFactorDialogComponent implements OnInit {
     ngOnInit(): void {
         this.data = {
             title: this.inputData?.title ?? 'Two-Factor Authentication',
-            description: this.inputData?.description ?? [
-                'Enter the 6-digit code from your authenticator app'
-            ],
+            description: this.inputData?.description ?? ['Enter the 6-digit code from your authenticator app'],
             cancelButtonLabel: this.inputData?.cancelButtonLabel ?? 'Cancel',
             confirmButtonLabel: this.inputData?.confirmButtonLabel ?? 'Confirm'
         };

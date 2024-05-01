@@ -1,7 +1,10 @@
-/* eslint-disable jsdoc/require-jsdoc */
-import { Component } from '@angular/core';
-import { BaseRole } from 'ngx-material-auth';
-import { CustomAuthData, CustomAuthService, Roles } from '../../services/custom-auth.service';
+
+
+import { Component, ViewChild } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { BaseRole, NgxMatAuthLoginComponent } from 'ngx-material-auth';
+
+import { CustomAuthData, CustomAuthService, CustomToken, Roles } from '../../services/custom-auth.service';
 
 type UserIds = '1' | '2';
 
@@ -49,19 +52,25 @@ const userAuthData: CustomAuthData[] = [
 @Component({
     selector: 'app-login',
     templateUrl: './login.component.html',
-    styleUrls: ['./login.component.scss']
+    styleUrls: ['./login.component.scss'],
+    standalone: true,
+    imports: [
+        MatButtonModule,
+        NgxMatAuthLoginComponent
+    ]
 })
 export class LoginComponent {
 
-    constructor(readonly authService: CustomAuthService) {
+    @ViewChild('loginComponent')
+    loginComponent!: NgxMatAuthLoginComponent<CustomAuthData, CustomToken, Roles, BaseRole<Roles>, CustomAuthService>;
 
-    }
+    constructor(readonly authService: CustomAuthService) {}
 
     login(userId: UserIds): void {
         this.authService.authData = userAuthData.find(ad => ad.userId === userId);
     }
 
-    logout(): void {
-        void this.authService.logout();
+    async logout(): Promise<void> {
+        await this.authService.logout();
     }
 }

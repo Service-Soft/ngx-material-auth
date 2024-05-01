@@ -6,7 +6,7 @@
         "stack": "run-s clear:dist stack:only",
         "showcase": "ng serve ngx-material-auth-showcase",
         "build:watch": "ng build ngx-material-auth --watch",
-        "api": "nodemon --watch api-data.ts --watch api.js --watch dist/ngx-material-auth/public-api.d.ts api.js",
+        "api": "nodemon --watch api-data.ts --watch api.ts --watch dist/ngx-material-auth/public-api.d.ts api.ts",
         "lint": "eslint projects --max-warnings 0",
         "lint:fix": "eslint projects --fix",
         "stack:only": "concurrently --kill-others 'npm run build:watch' 'run-s waitOn:build api' 'run-s waitOn:build showcase'",
@@ -19,7 +19,10 @@
         "copyToDist:readme": "ncp ./README.md ./dist/ngx-material-auth/README.md",
         "copyToDist:contributing": "ncp ./CONTRIBUTING.md ./dist/ngx-material-auth/CONTRIBUTING.md",
         "copyToDist:license": "ncp ./LICENSE.md ./dist/ngx-material-auth/LICENSE.md",
-        "test": "ng test"
+        "test": "concurrently --kill-others 'npm run build:watch' 'run-s waitOn:build api' 'run-s waitOn:build test:showcase'",
+        "test:ci": "concurrently --kill-others --success first 'npm run build:watch' 'run-s waitOn:build api' 'run-s waitOn:build test:showcase:ci'",
+        "test:showcase": "ng test ngx-material-auth-showcase",
+        "test:showcase:ci": "ng test ngx-material-auth-showcase --browsers=ChromeHeadless --watch=false"
     },
     "private": true,
     "dependencies": {
@@ -33,7 +36,6 @@
         "@angular/platform-browser": "~16.2.0",
         "@angular/platform-browser-dynamic": "~16.2.0",
         "@angular/router": "~16.2.0",
-        "bootstrap": "^5.3.1",
         "rxjs": "~7.8.1",
         "tslib": "^2.6.1",
         "zone.js": "~0.13.1"
@@ -45,7 +47,7 @@
         "@types/jasmine": "~4.3.5",
         "@types/qrcode": "^1.5.1",
         "concurrently": "^8.2.0",
-        "eslint-config-service-soft": "^1.1.0",
+        "eslint-config-service-soft": "^1.3.3",
         "jasmine-core": "~5.1.0",
         "karma": "~6.4.2",
         "karma-chrome-launcher": "~3.2.0",
@@ -54,7 +56,7 @@
         "karma-jasmine-html-reporter": "~2.1.0",
         "ncp": "^2.0.0",
         "ng-packagr": "^16.2.0",
-        "ngx-material-navigation": "^16.0.0",
+        "ngx-material-navigation": "^16.0.1",
         "nodemon": "^3.0.1",
         "npm-run-all": "^4.1.5",
         "qrcode": "^1.5.3",

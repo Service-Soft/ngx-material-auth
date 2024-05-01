@@ -3,7 +3,8 @@ import { InjectionToken, NgZone } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
+import { BehaviorSubject, lastValueFrom } from 'rxjs';
+
 import { NgxMatAuthErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
 import { NgxMatAuthSetupTwoFactorDialogComponent } from '../components/setup-two-factor-dialog/setup-two-factor-dialog.component';
 import { SetupTwoFactorDialogConfig } from '../components/setup-two-factor-dialog/setup-two-factor-dialog.config';
@@ -15,18 +16,21 @@ import { BaseToken } from '../models/base-token.model';
 import { ErrorData } from '../models/error-data.model';
 import { LoginData } from '../models/login-data.model';
 
-// eslint-disable-next-line @typescript-eslint/typedef
-export const NGX_AUTH_SERVICE = new InjectionToken(
+/**
+ * Injection Token for the auth service.
+ */
+// eslint-disable-next-line typescript/no-explicit-any
+export const NGX_AUTH_SERVICE: InjectionToken<JwtAuthService<any, any, any, any>> = new InjectionToken<JwtAuthService<any, any, any, any>>(
     'Provide for the authService used eg. in guards or the login component.',
     {
         providedIn: 'root',
-        factory: () => {
+        factory: (() => {
             // eslint-disable-next-line no-console
             console.error(
-                // eslint-disable-next-line max-len
                 'No AuthService has been provided for the token NGX_AUTH_SERVICE\nAdd this to your app.module.ts provider array:\n{\n    provide: NGX_AUTH_SERVICE,\n    useExisting: MyAuthService\n}'
             );
-        }
+        // eslint-disable-next-line typescript/no-explicit-any
+        }) as unknown as () => JwtAuthService<any, any, any, any>
     }
 );
 
@@ -36,7 +40,7 @@ const HOUR_IN_MS: number = 3600000;
 /**
  * The response with the qr code url to enable 2fa.
  */
-interface TwoFactorUrlResponse {
+export interface TwoFactorUrlResponse {
     /**
      * The totp qr code url.
      */
@@ -46,7 +50,7 @@ interface TwoFactorUrlResponse {
 /**
  * The response that is sent when logging in requires a 2fa code.
  */
-interface RequireTwoFactorResponse {
+export interface RequireTwoFactorResponse {
     /**
      * Notice that the login process requires a 2fa code.
      */
@@ -56,7 +60,7 @@ interface RequireTwoFactorResponse {
 /**
  * The Response vor verifying a password reset token.
  */
-interface VerifyResetTokenResponse {
+export interface VerifyResetTokenResponse {
     /**
      * Whether or not the provided reset token is valid.s.
      */
@@ -66,7 +70,7 @@ interface VerifyResetTokenResponse {
 /**
  * The response sent to a user logging in when he is required to change his password.
  */
-interface RequirePasswordChangeResponse {
+export interface RequirePasswordChangeResponse {
     /**
      * Whether or not the user is required to change his password.
      */
@@ -94,35 +98,37 @@ export abstract class JwtAuthService<
 
     /**
      * The duration of the access token in milliseconds.
-     *
      * @default 3600000 // 1 hour
      */
     readonly ACCESS_TOKEN_DURATION_IN_MS: number = HOUR_IN_MS;
 
     /**
      * The duration of the refresh token in milliseconds.
-     *
      * @default 8640000000 // 100 days
      */
     readonly REFRESH_TOKEN_DURATION_IN_MS: number = ONE_HUNDRED_DAYS_IN_MS;
 
     /**
      * The route for requesting a password change.
+     * @default '/request-reset-password'
      */
     readonly REQUEST_RESET_PASSWORD_ROUTE: string = '/request-reset-password';
 
     /**
      * The message to display inside a snackbar when the mail for resetting a password was sent successfully.
+     * @default 'A Mail for changing your password is on its way'
      */
     readonly REQUEST_RESET_PASSWORD_SNACK_BAR_MESSAGE: string = 'A Mail for changing your password is on its way';
 
     /**
      * The message to display inside a snackbar when password was reset successfully.
+     * @default 'Password changed successfully!'
      */
     readonly CONFIRM_RESET_PASSWORD_SNACK_BAR_MESSAGE: string = 'Password changed successfully!';
 
     /**
      * The name of the custom header that is used to transport two factor codes.
+     * @default 'X-Authorization-2FA'
      */
     readonly TWO_FACTOR_HEADER: string = 'X-Authorization-2FA';
 
@@ -139,8 +145,9 @@ export abstract class JwtAuthService<
     /**
      * When the user tries to access a route for which he doesn't have the permission and is logged out
      * he gets redirected to this route afterwards.
+     * @default '/login'
      */
-    protected readonly ROUTE_AFTER_LOGOUT: string = '/login';
+    readonly ROUTE_AFTER_LOGOUT: string = '/login';
 
     /**
      * The default url for refresh token requests.
@@ -179,7 +186,7 @@ export abstract class JwtAuthService<
     get authData(): AuthDataType | undefined {
         return this.authDataSubject.value;
     }
-    // eslint-disable-next-line jsdoc/require-jsdoc
+
     set authData(value: AuthDataType | undefined) {
         value = this.transformAuthDataBeforeSetting(value);
         localStorage.setItem(this.AUTH_DATA_KEY, JSON.stringify(value));
@@ -207,7 +214,6 @@ export abstract class JwtAuthService<
      *
      * DEFAULT: When the api sends roles as a list of strings instead of Role objects,
      * they are transformed to role objects with displayName and value being the string send by the api.
-     *
      * @param authData - The auth data that should be set.
      * @returns The transformed auth data or undefined.
      */
@@ -225,12 +231,11 @@ export abstract class JwtAuthService<
 
     /**
      * Login a user.
-     *
      * @param loginData - The data that is sent to the server to login the user.
      * @returns A promise of the received authData.
      */
     async login(loginData: LoginData): Promise<AuthDataType> {
-        const res: AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse = await firstValueFrom(
+        const res: AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse = await lastValueFrom(
             this.http.post<AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse>(this.API_LOGIN_URL, loginData)
         );
         if (this.isAuthDataType(res)) {
@@ -246,7 +251,7 @@ export abstract class JwtAuthService<
         if (!code) {
             throw new Error('No two factor code has been provided.');
         }
-        this.authData = await firstValueFrom(
+        this.authData = await lastValueFrom(
             this.http.post<AuthDataType>(this.API_LOGIN_URL, loginData, { headers: { [this.TWO_FACTOR_HEADER]: code } })
         );
         return this.authData;
@@ -257,30 +262,29 @@ export abstract class JwtAuthService<
             name: 'Password change required',
             message: 'You are required to reset your password.'
         };
-        const dialogRef: MatDialogRef<NgxMatAuthErrorDialogComponent> = this.dialog.open(
+        const dialogRef: MatDialogRef<NgxMatAuthErrorDialogComponent, void> = this.dialog.open(
             NgxMatAuthErrorDialogComponent,
             { data: data, disableClose: true, restoreFocus: false }
         );
-        await firstValueFrom<void>(dialogRef.afterClosed() as Observable<void>);
+        await lastValueFrom(dialogRef.afterClosed());
     }
 
-    // eslint-disable-next-line max-len
+
     private isRequirePasswordChangeType(res: RequireTwoFactorResponse | RequirePasswordChangeResponse): res is RequirePasswordChangeResponse {
         return !!(res as RequirePasswordChangeResponse).requirePasswordChange;
     }
 
     /**
      * Opens a two factor dialog with the given configuration data and returns the code that has been input.
-     *
      * @param data - Configuration data for the dialog.
      * @returns The input two factor code or undefined if the dialog was closed with cancel.
      */
     async openInput2FADialog(data?: Partial<TwoFactorDialogConfig>): Promise<string | undefined> {
-        const dialogRef: MatDialogRef<NgxMatAuthTwoFactorDialogComponent> = this.dialog.open(
+        const dialogRef: MatDialogRef<NgxMatAuthTwoFactorDialogComponent, string> = this.dialog.open(
             NgxMatAuthTwoFactorDialogComponent,
             { data: data, disableClose: true, restoreFocus: false }
         );
-        return firstValueFrom<string | undefined>(dialogRef.afterClosed() as Observable<string | undefined>);
+        return lastValueFrom(dialogRef.afterClosed());
     }
 
     private isAuthDataType(value: AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse): value is AuthDataType {
@@ -288,16 +292,17 @@ export abstract class JwtAuthService<
     }
 
     /**
-     * Logout the current user.o.
+     * Logout the current user.
      */
     async logout(): Promise<void> {
         if (!this.authData) {
+            await this.router.navigateByUrl(this.ROUTE_AFTER_LOGOUT);
             return;
         }
         const refreshTokenValue: string = this.authData.refreshToken.value;
         this.authData = undefined;
-        await firstValueFrom(this.http.post<void>(this.API_LOGOUT_URL, { refreshToken: refreshTokenValue }));
-        void this.router.navigate([this.ROUTE_AFTER_LOGOUT], {});
+        await lastValueFrom(this.http.post<void>(this.API_LOGOUT_URL, { refreshToken: refreshTokenValue }));
+        await this.router.navigateByUrl(this.ROUTE_AFTER_LOGOUT);
     }
 
     /**
@@ -307,19 +312,16 @@ export abstract class JwtAuthService<
         if (!this.authData) {
             return;
         }
-        this.authData = await firstValueFrom(
-            this.http.post<AuthDataType>(this.API_REFRESH_TOKEN_URL, { refreshToken: this.authData.refreshToken.value })
-        );
+        this.authData = await lastValueFrom(this.http.post<AuthDataType>(this.API_REFRESH_TOKEN_URL, { refreshToken: this.authData.refreshToken.value }));
     }
 
     /**
      * Requests a new password from the server.
      * Should sent a reset-link to the given email with a one time short lived (~5 minutes) token.
-     *
      * @param email - The email of the user that wants to reset his password.
      */
     async requestResetPassword(email: string): Promise<void> {
-        await firstValueFrom(this.http.post<void>(this.API_REQUEST_RESET_PASSWORD_URL, { email: email }));
+        await lastValueFrom(this.http.post<void>(this.API_REQUEST_RESET_PASSWORD_URL, { email: email }));
         this.zone.run(() => {
             this.snackbar.open(this.REQUEST_RESET_PASSWORD_SNACK_BAR_MESSAGE, undefined, { duration: 5000 });
         });
@@ -327,12 +329,11 @@ export abstract class JwtAuthService<
 
     /**
      * Confirms the reset of the password.
-     *
      * @param newPassword - The new password.
      * @param resetToken - The token from the email. Needed to authorize the password reset.
      */
     async confirmResetPassword(newPassword: string, resetToken: string): Promise<void> {
-        await firstValueFrom(this.http.post<void>(this.API_CONFIRM_RESET_PASSWORD_URL, { password: newPassword, resetToken: resetToken }));
+        await lastValueFrom(this.http.post<void>(this.API_CONFIRM_RESET_PASSWORD_URL, { password: newPassword, resetToken: resetToken }));
         this.zone.run(() => {
             this.snackbar.open(this.CONFIRM_RESET_PASSWORD_SNACK_BAR_MESSAGE, undefined, { duration: 5000 });
         });
@@ -340,12 +341,11 @@ export abstract class JwtAuthService<
 
     /**
      * Checks if the given reset token is valid.
-     *
      * @param resetToken - The token from the email. Needed to authorize the password reset.
      * @returns Whether or not the given token is valid.
      */
     async isResetTokenValid(resetToken: string): Promise<boolean> {
-        const res: VerifyResetTokenResponse = await firstValueFrom(
+        const res: VerifyResetTokenResponse = await lastValueFrom(
             this.http.post<VerifyResetTokenResponse>(this.API_VERIFY_RESET_PASSWORD_TOKEN_URL, { value: resetToken })
         );
         return res.isValid;
@@ -353,7 +353,6 @@ export abstract class JwtAuthService<
 
     /**
      * Checks whether or not the currently logged in user has one of the provided roles.
-     *
      * @param allowedRolesValues - All roles that are allowed to do a certain thing.
      * @returns Whether or not the user has one of the provided allowed roles.
      */
@@ -369,16 +368,14 @@ export abstract class JwtAuthService<
 
     /**
      * Generates a qr code url to setup 2fa in eg. Google Authenticator.
-     *
      * @returns The response with the qr code url.
      */
     async turnOn2FA(): Promise<TwoFactorUrlResponse> {
-        return await firstValueFrom(this.http.post<TwoFactorUrlResponse>(this.API_TURN_ON_TWO_FACTOR_URL, undefined));
+        return lastValueFrom(this.http.post<TwoFactorUrlResponse>(this.API_TURN_ON_TWO_FACTOR_URL, undefined));
     }
 
     /**
      * Opens the dialog to turn on 2fa. The dialog displays a qr code and an input to confirm with a two factor code.
-     *
      * @param data - Configuration data for the dialog.
      */
     openTurnOn2FADialog(data?: Partial<SetupTwoFactorDialogConfig>): void {
@@ -388,11 +385,10 @@ export abstract class JwtAuthService<
     /**
      * Confirms turning on two factor authentication.
      * Sends the provided two factor code to the configured endpoint.
-     *
      * @param twoFactorCode - The two factor code that the user generated using eg. Google Authenticator.
      */
     async confirmTurnOn2FA(twoFactorCode: string): Promise<void> {
-        await firstValueFrom(
+        await lastValueFrom(
             this.http.post<void>(
                 this.API_CONFIRM_TURN_ON_TWO_FACTOR_URL,
                 undefined,

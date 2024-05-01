@@ -67,8 +67,7 @@
                             "projects/ngx-material-auth-showcase/src/assets"
                         ],
                         "styles": [
-                            "projects/ngx-material-auth-showcase/src/styles.scss",
-                            "./node_modules/bootstrap/dist/css/bootstrap.min.css"
+                            "projects/ngx-material-auth-showcase/src/styles.scss"
                         ],
                         "scripts": []
                     },
@@ -146,6 +145,6 @@
         }
     },
     "cli": {
-      "analytics": false
+        "analytics": false
     }
 }

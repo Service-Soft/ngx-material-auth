@@ -1,5 +1,5 @@
 <div class="center">
-    <ngx-mat-auth-login></ngx-mat-auth-login>
+    <ngx-mat-auth-login #loginComponent></ngx-mat-auth-login>
 </div>
 
 <div class="login-buttons-row">
@@ -8,5 +8,5 @@
 </div>
 
 <div class="logout-button-row">
-    <button type="button" [disabled]="!authService.authData" mat-raised-button (click)="logout()">Logout</button>
+    <button type="button" mat-raised-button [disabled]="!authService.authData" (click)="logout()">Logout</button>
 </div>

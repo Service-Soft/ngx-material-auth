@@ -1,29 +1,38 @@
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
 
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { NgModule, inject } from '@angular/core';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { HttpErrorInterceptor, JwtInterceptor, NGX_AUTH_SERVICE, NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS } from 'ngx-material-auth';
+import { ActivatedRouteSnapshot, RouterModule, RouterStateSnapshot } from '@angular/router';
+import { HttpErrorInterceptor, JwtInterceptor, NGX_AUTH_SERVICE, NGX_GUARD_CONFIG, NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS, NgxGuardConfig } from 'ngx-material-auth';
 import { NgxMatNavigationFooterModule, NgxMatNavigationNavbarModule } from 'ngx-material-navigation';
+
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CustomAuthService } from './services/custom-auth.service';
+
+const guardConfig: Partial<NgxGuardConfig> = {
+    belongsToGuard: {
+        getBelongsToForRoute: getBelongsToForRouteValue
+    }
+};
 
 @NgModule({
     declarations: [
         AppComponent
     ],
     imports: [
-        BrowserModule,
         AppRoutingModule,
         BrowserAnimationsModule,
+        BrowserModule,
         HttpClientModule,
-        NgxMatNavigationNavbarModule,
-        NgxMatNavigationFooterModule,
+        MatDialogModule,
         MatSnackBarModule,
-        MatDialogModule
+        NgxMatNavigationFooterModule,
+        NgxMatNavigationNavbarModule,
+        RouterModule
     ],
     providers: [
         {
@@ -35,6 +44,10 @@ import { CustomAuthService } from './services/custom-auth.service';
             useValue: ['localhost:3000']
         },
         {
+            provide: NGX_GUARD_CONFIG,
+            useValue: guardConfig
+        },
+        {
             provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true
         },
         {
@@ -44,3 +57,19 @@ import { CustomAuthService } from './services/custom-auth.service';
     bootstrap: [AppComponent]
 })
 export class AppModule { }
+
+// eslint-disable-next-line unusedImports/no-unused-vars
+function getBelongsToForRouteValue(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
+    const authService: CustomAuthService = inject(CustomAuthService);
+    if (!authService.authData?.userId) {
+        return false;
+    }
+    const allowedUserIds: string[] | undefined = route.data['allowedUserIds'] as string[] | undefined;
+    if (!allowedUserIds?.length) {
+        return false;
+    }
+    if (allowedUserIds.find(id => id === authService.authData?.userId)) {
+        return true;
+    }
+    return false;
+}
