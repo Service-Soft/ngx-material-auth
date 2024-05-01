@@ -3,12 +3,13 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { toCanvas } from 'qrcode';
+
+import { SetupTwoFactorDialogConfig } from './setup-two-factor-dialog.config';
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseRole } from '../../models/base-role.model';
 import { BaseToken } from '../../models/base-token.model';
-import { JwtAuthService, NGX_AUTH_SERVICE } from '../../services/jwt-auth.service';
+import { JwtAuthService, NGX_AUTH_SERVICE, TwoFactorUrlResponse } from '../../services/jwt-auth.service';
 import { NgxMatAuthTwoFactorCodeInputComponent } from '../two-factor-code-input/two-factor-code-input.component';
-import { SetupTwoFactorDialogConfig } from './setup-two-factor-dialog.config';
 
 /**
  * The dialog to setup two factor authentication.
@@ -72,11 +73,10 @@ export class NgxMatAuthSetupTwoFactorDialogComponent<
             cancelButtonLabel: this.inputData?.cancelButtonLabel ?? 'Cancel',
             confirmButtonLabel: this.inputData?.confirmButtonLabel ?? 'Activate'
         };
-        void this.authService.turnOn2FA().then(async response => {
-            const canvas: HTMLCanvasElement = document.getElementById('2fa-canvas') as HTMLCanvasElement;
-            await toCanvas(canvas, response.url, { width: 180, margin: 0 });
-            this.secret = this.getSecretFromCode(response.url);
-        });
+        const response: TwoFactorUrlResponse = await this.authService.turnOn2FA();
+        const canvas: HTMLCanvasElement = document.getElementById('2fa-canvas') as HTMLCanvasElement;
+        await toCanvas(canvas, response.url, { width: 180, margin: 0 });
+        this.secret = this.getSecretFromCode(response.url);
     }
 
     private getSecretFromCode(qrCode: string): string {

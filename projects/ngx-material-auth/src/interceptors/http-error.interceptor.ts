@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { Observable, catchError, throwError } from 'rxjs';
+
 import { NgxMatAuthErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
@@ -62,14 +63,13 @@ export class HttpErrorInterceptor<
     /**
      * The main method used by angular to intercept any http-requests with errors.
      * Displays an error message to the user and logs him out if requested.
-     *
      * @param request - The http-request that was intercepted.
      * @param next - The next http-handler in angular's chain.
      * @returns An Observable that is used by angular in the intercept chain.
      */
     intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return next.handle(request).pipe(
+            // eslint-disable-next-line promise/prefer-await-to-callbacks
             catchError((error: HttpErrorResponse) => {
                 if (this.userShouldBeLoggedOut(error, request)) {
                     void this.authService.logout();
@@ -85,7 +85,6 @@ export class HttpErrorInterceptor<
 
     /**
      * Checks if the user should be logged out after triggering the provided error.
-     *
      * @param error - The http-error that came from the api.
      * @param request - Data about the request that caused the error.
      * @returns Whether or not the current user should be logged out.
@@ -99,12 +98,11 @@ export class HttpErrorInterceptor<
 
     /**
      * Checks if an dialog for the given error should be displayed to the user.
-     *
      * @param error - The http-error that was thrown.
      * @param request - Data about the request that caused the error.
      * @returns Whether or not an dialog should be displayed for the error.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line unusedImports/no-unused-vars
     protected errorDialogShouldBeDisplayed(error: HttpErrorResponse, request: HttpRequest<unknown>): boolean {
         return true;
     }
@@ -112,7 +110,6 @@ export class HttpErrorInterceptor<
     /**
      * Gets the message from the HttpError.
      * Prefers the most nested one.
-     *
      * @param error - The http-error that was thrown.
      * @returns The message of the http-error.
      */
@@ -135,7 +132,6 @@ export class HttpErrorInterceptor<
 
     /**
      * Checks if the provided error has something to do with CORS.
-     *
      * @param error - The error to check.
      * @returns Whether or not the provided error has something to do with CORS.
      */

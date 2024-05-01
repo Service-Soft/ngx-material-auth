@@ -1,12 +1,13 @@
 import { NgIf } from '@angular/common';
 import { Component, Inject, Input, NgZone, OnInit } from '@angular/core';
-import { FormsModule, NgModel } from '@angular/forms';
+import { FormsModule, NgForm, NgModel } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseRole } from '../../models/base-role.model';
 import { BaseToken } from '../../models/base-token.model';
@@ -54,7 +55,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     /**
      * The title of the confirm reset password box.
-     *
      * @default 'New Password'
      */
     @Input()
@@ -62,7 +62,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     /**
      * The label for the password input.
-     *
      * @default 'Password'
      */
     @Input()
@@ -70,7 +69,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     /**
      * The minimum length for the password input.
-     *
      * @default null // no minimum length
      */
     @Input()
@@ -78,7 +76,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     /**
      * The label for the change password button.
-     *
      * @default 'Change Password'
      */
     @Input()
@@ -86,7 +83,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     /**
      * A custom label for the cancel button.
-     *
      * @default 'Cancel'
      */
     @Input()
@@ -94,7 +90,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     /**
      * The route to which the user gets redirected when he clicks on the cancel button.
-     *
      * @default routeAfterReset
      */
     @Input()
@@ -102,7 +97,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     /**
      * The route to which the user gets redirected after the password has been changed successfully.
-     *
      * @default '/login'
      */
     @Input()
@@ -110,7 +104,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     /**
      * The route to which the user gets redirected if the reset token is not correct.
-     *
      * @default '/'
      */
     @Input()
@@ -118,7 +111,6 @@ export class NgxMatAuthConfirmResetPasswordComponent<
 
     /**
      * The error data to display in an dialog when the provided reset token doesn't exist or is invalid.
-     *
      * @default
      *{
      * name: 'Error',
@@ -168,7 +160,7 @@ export class NgxMatAuthConfirmResetPasswordComponent<
             !this.resetToken
             || !(await this.authService.isResetTokenValid(this.resetToken))
         ) {
-            await this.router.navigate([this.routeIfResetTokenInvalid]);
+            await this.router.navigateByUrl(this.routeIfResetTokenInvalid);
             this.zone.run(() => {
                 this.dialog.open(
                     NgxMatAuthErrorDialogComponent,
@@ -195,27 +187,26 @@ export class NgxMatAuthConfirmResetPasswordComponent<
     /**
      * Cancels the password reset.
      */
-    cancel(): void {
-        void this.router.navigate([this.routeForCancel]);
+    async cancel(): Promise<void> {
+        await this.router.navigateByUrl(this.routeForCancel);
     }
 
     /**
      * Changes the password.
+     * @param form - The form. Is passed to clear it without triggering input validation errors.
      */
-    onSubmit(): void {
-        this.authService.confirmResetPassword(this.password as string, this.resetToken as string)
-            .then(() => {
-                this.resetInputFields();
-                void this.router.navigate([this.routeAfterReset]);
-            })
-            .catch(() => {
-                this.resetInputFields();
-                void this.router.navigate([this.routeAfterReset]);
-            });
-    }
-
-    private resetInputFields(): void {
-        this.password = '';
-        this.resetToken = '';
+    async onSubmit(form: NgForm): Promise<void> {
+        if (!this.password || !this.resetToken) {
+            return;
+        }
+        try {
+            await this.authService.confirmResetPassword(this.password, this.resetToken);
+            form.resetForm();
+            await this.router.navigateByUrl(this.routeAfterReset);
+        }
+        catch (error) {
+            form.resetForm();
+            await this.router.navigateByUrl(this.routeAfterReset);
+        }
     }
 }
