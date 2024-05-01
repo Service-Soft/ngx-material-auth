@@ -28,7 +28,7 @@ jobs:
             - name: Test
               run: |
                   cd $GITHUB_WORKSPACE
-                  npm run test
+                  npm run test:ci
             # runs linting
             - name: Linting
               run: |
