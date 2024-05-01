@@ -83,6 +83,7 @@ describe('LoginComponent', () => {
         await component.loginComponent.onSubmit(mockForm);
 
         expect(navigateSpy.calls.count()).toEqual(1);
+        component.authService.authData = undefined;
     });
 
     it('should fail login with incorrect data', async () => {
