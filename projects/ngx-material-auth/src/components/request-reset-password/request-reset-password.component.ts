@@ -1,10 +1,11 @@
 import { NgIf } from '@angular/common';
 import { Component, Inject, Input, OnInit } from '@angular/core';
-import { FormsModule, NgModel } from '@angular/forms';
+import { FormsModule, NgForm, NgModel } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
+
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseRole } from '../../models/base-role.model';
 import { BaseToken } from '../../models/base-token.model';
@@ -43,7 +44,6 @@ export class NgxMatAuthRequestResetPasswordComponent<
 
     /**
      * The title of the request reset password box.
-     *
      * @default 'Forgot Password'
      */
     @Input()
@@ -51,7 +51,6 @@ export class NgxMatAuthRequestResetPasswordComponent<
 
     /**
      * A custom label for the email input.
-     *
      * @default 'Email'
      */
     @Input()
@@ -59,7 +58,6 @@ export class NgxMatAuthRequestResetPasswordComponent<
 
     /**
      * A custom label for the send email button.
-     *
      * @default 'Send Email'
      */
     @Input()
@@ -67,7 +65,6 @@ export class NgxMatAuthRequestResetPasswordComponent<
 
     /**
      * A custom label for the cancel button.
-     *
      * @default 'Cancel'
      */
     @Input()
@@ -75,7 +72,6 @@ export class NgxMatAuthRequestResetPasswordComponent<
 
     /**
      * The route to navigate to after the user successfully requests the reset of his password.
-     *
      * @default '/login'
      */
     @Input()
@@ -106,25 +102,26 @@ export class NgxMatAuthRequestResetPasswordComponent<
     /**
      * Cancels the password reset.
      */
-    cancel(): void {
-        void this.router.navigate([this.routeAfterRequest]);
+    async cancel(): Promise<void> {
+        await this.router.navigateByUrl(this.routeAfterRequest);
     }
 
     /**
      * Requests the reset of the password for the user with the given email.
+     * @param form - The login form. Is passed to clear it without triggering input validation errors.
      */
-    onSubmit(): void {
+    async onSubmit(form: NgForm): Promise<void> {
         if (!this.email) {
             return;
         }
-        this.authService.requestResetPassword(this.email)
-            .then(() => {
-                this.email = undefined;
-                void this.router.navigate([this.routeAfterRequest]);
-            })
-            .catch(err => {
-                this.email = undefined;
-                throw err;
-            });
+        try {
+            await this.authService.requestResetPassword(this.email);
+            form.resetForm();
+            await this.router.navigateByUrl(this.routeAfterRequest);
+        }
+        catch (error) {
+            form.resetForm();
+            throw error;
+        }
     }
 }

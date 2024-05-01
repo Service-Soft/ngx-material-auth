@@ -1,6 +1,7 @@
 /* eslint-disable jsdoc/require-jsdoc */
 import { AfterContentChecked, Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { FooterRow, NavbarRow } from 'ngx-material-navigation';
+
 import { footerRows, navbarRows } from './routes';
 
 @Component({
@@ -23,7 +24,7 @@ export class AppComponent implements AfterContentChecked {
         }
     }
 
-    // eslint-disable-next-line jsdoc/require-jsdoc
+
     @HostListener('window:resize', ['$event'])
     onResize(): void {
         if (this.footer) {

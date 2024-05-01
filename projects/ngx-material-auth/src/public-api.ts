@@ -13,6 +13,7 @@ export * from './components/two-factor-dialog/two-factor.dialog.config';
 
 export * from './components/get-validation-error-message.function';
 
+export * from './guards/guard-config.type';
 export * from './guards/jwt-belongs-to.guard';
 export * from './guards/jwt-logged-in.guard';
 export * from './guards/jwt-not-logged-in.guard';

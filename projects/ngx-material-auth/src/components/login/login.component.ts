@@ -1,10 +1,11 @@
 import { NgIf } from '@angular/common';
 import { Component, Inject, Input, OnInit } from '@angular/core';
-import { FormsModule, NgModel } from '@angular/forms';
+import { FormsModule, NgForm, NgModel } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterModule } from '@angular/router';
+
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseRole } from '../../models/base-role.model';
 import { BaseToken } from '../../models/base-token.model';
@@ -17,13 +18,11 @@ import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-messag
 export interface ForgotPasswordLinkData {
     /**
      * What is displayed in the UI.
-     *
      * @default 'Forgot your password?'
      */
     displayName: string,
     /**
      * The route to which the link navigates.
-     *
      * @default '/reset-password'
      */
     route: string
@@ -62,7 +61,6 @@ export class NgxMatAuthLoginComponent<
 
     /**
      * A custom title of the login box.
-     *
      * @default 'Login'
      */
     @Input()
@@ -70,7 +68,6 @@ export class NgxMatAuthLoginComponent<
 
     /**
      * A custom label for the email input.
-     *
      * @default 'Email'
      */
     @Input()
@@ -78,7 +75,6 @@ export class NgxMatAuthLoginComponent<
 
     /**
      * A custom label for the password input.
-     *
      * @default 'Password'
      */
     @Input()
@@ -86,7 +82,6 @@ export class NgxMatAuthLoginComponent<
 
     /**
      * A custom label for the login button.
-     *
      * @default 'Login'
      */
     @Input()
@@ -94,7 +89,6 @@ export class NgxMatAuthLoginComponent<
 
     /**
      * Data for the forgot password link.
-     *
      * @default {
      * displayName: 'Forgot your password?',
      * route: '/reset-password'
@@ -105,7 +99,6 @@ export class NgxMatAuthLoginComponent<
 
     /**
      * The route to which the user gets redirected after he logs in successful.
-     *
      * @default '/'
      */
     @Input()
@@ -140,28 +133,27 @@ export class NgxMatAuthLoginComponent<
         this.emailInputLabel = this.emailInputLabel ?? 'Email';
         this.passwordInputLabel = this.passwordInputLabel ?? 'Password';
         this.loginButtonLabel = this.loginButtonLabel ?? 'Login';
-        // eslint-disable-next-line max-len
+
         this.forgotPasswordLinkData = this.forgotPasswordLinkData ?? { displayName: 'Forgot your password?', route: this.authService.REQUEST_RESET_PASSWORD_ROUTE };
         this.routeAfterLogin = this.routeAfterLogin ?? '/';
     }
 
     /**
      * The method that gets called when the user tries to login.
+     * @param form - The login form. Is passed to clear it without triggering input validation errors.
      */
-    onSubmit(): void {
+    async onSubmit(form: NgForm): Promise<void> {
         if (!this.email || !this.password) {
             return;
         }
-        this.authService.login({ email: this.email, password: this.password })
-            .then(() => {
-                this.email = undefined;
-                this.password = undefined;
-                void this.router.navigate([this.routeAfterLogin]);
-            })
-            .catch(err => {
-                this.email = undefined;
-                this.password = undefined;
-                throw err;
-            });
+        try {
+            await this.authService.login({ email: this.email, password: this.password });
+            form.resetForm();
+            await this.router.navigateByUrl(this.routeAfterLogin);
+        }
+        catch (error) {
+            form.resetForm();
+            throw error;
+        }
     }
 }

@@ -1,11 +1,11 @@
 /* eslint-disable jsdoc/require-jsdoc */
-
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { BaseAuthData, BaseRole, BaseToken, JwtAuthService } from 'ngx-material-auth';
+
 import { environment } from '../../environments/environment';
 
 export enum Roles {

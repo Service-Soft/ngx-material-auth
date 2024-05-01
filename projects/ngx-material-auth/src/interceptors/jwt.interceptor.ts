@@ -1,11 +1,15 @@
 import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Inject, Injectable, InjectionToken } from '@angular/core';
-import { Observable, firstValueFrom, from } from 'rxjs';
+import { Observable, exhaustMap, from } from 'rxjs';
+
 import { BaseAuthData } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
 import { BaseToken } from '../models/base-token.model';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../services/jwt-auth.service';
 
+/**
+ * Used to define domains to which an jwt token should be added. This should be used to not send tokens e.g. To third party apis.
+ */
 export const NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS: InjectionToken<string[]> = new InjectionToken(
     'Used to define domains to which an jwt token should be added. This should be used to not send tokens e.g. to third party apis.',
     {
@@ -13,7 +17,6 @@ export const NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS: InjectionToken<string[]> = new
         factory: () => {
             // eslint-disable-next-line no-console
             console.warn(
-                // eslint-disable-next-line max-len
                 'No allowedDomains have been provided for the token NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS.\nRight now every http-request adds the jwt token. It is encouraged to provide a value for this to prohibit sending jwt tokens to e.g. third party apis.\nAdd this to your app.module.ts provider array:\n{\n    provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS,\n    useValue: ["myDomain", "myOtherDomain"]\n}'
             );
         }
@@ -44,76 +47,72 @@ export class JwtInterceptor<
 
     /**
      * The main method used by angular to intercept any http-requests and append the jwt.
-     *
      * @param request - The http-request that was intercepted.
      * @param next - The next http-handler in angular's chain.
      * @returns An Observable that is used by angular in the intercept chain.
      */
     intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+        if (!this.authService.authData || this.requestIsToDisallowedDomain(request) || this.requestDoesNotRequireToken(request)) {
+            // user is not logged in, therefore the request is just passed
+            return next.handle(request);
+        }
         if (this.refreshTokenExpired()) {
+            // the users refresh token is expired => he is completely logged out, without any chance to automatically refresh the login
             this.authService.authData = undefined;
-        }
-        if (!this.authService.authData?.accessToken) {
             return next.handle(request);
         }
-        if (this.requestIsToDisallowedDomain(request)) {
+        // There is a logged that does not need refreshing.
+        if (!this.tokenNeedsToBeRefreshed(request)) {
+            request = request.clone({
+                setHeaders: {
+                    authorization: `Bearer ${this.authService.authData.accessToken.value}`
+                }
+            });
             return next.handle(request);
         }
-        if (this.requestDoesNotRequireToken(request)) {
-            return next.handle(request);
-        }
-        if (this.tokenNeedsToBeRefreshed(request)) {
-            return from(this.refreshAndHandle(request, next));
-        }
-        request = request.clone({
-            setHeaders: {
-                authorization: `Bearer ${this.authService.authData.accessToken.value}`
-            }
-        });
-        return next.handle(request);
+
+        // there is a user that is currently logged in but needs refreshing.
+        return this.refreshAndHandle(request, next);
     }
 
     /**
      * Check if the intercepted request is one of the special cases where no token is required.
      *
+     * By default this is the case for the refresh-token and logout url.
      * @param request - The http-request that was intercepted.
      * @returns Whether or not the intercepted request is one of the special cases where no token is required.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected requestDoesNotRequireToken(request: HttpRequest<unknown>): boolean {
-        return false;
+        return request.url === this.authService.API_REFRESH_TOKEN_URL
+            || request.url === this.authService.API_LOGOUT_URL;
     }
 
     /**
      * Refreshes the token synchronous and sends the request afterwards.
-     *
      * @param request - The http-request that was intercepted.
      * @param next - The next http-handler in angular's chain.
      * @returns A promise of an unknown HttpEvent. Inside the interceptor you need to call "return from(this.refreshAndHandle(...))".
      */
-    protected async refreshAndHandle(request: HttpRequest<unknown>, next: HttpHandler): Promise<HttpEvent<unknown>> {
-        await this.authService.refreshToken();
-        request = request.clone({
-            setHeaders: {
-                authorization: `Bearer ${this.authService.authData?.accessToken.value}`
-            }
-        });
-        return await firstValueFrom(next.handle(request));
+    protected refreshAndHandle(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+        return from(this.authService.refreshToken()).pipe(
+            exhaustMap(() => {
+                request = request.clone({
+                    setHeaders: {
+                        authorization: `Bearer ${this.authService.authData?.accessToken.value}`
+                    }
+                });
+                return next.handle(request);
+            })
+        );
     }
 
     /**
      * Checks whether or not the token needs to be refreshed.
-     *
      * @param request - The request to check.
      * @returns Whether or not the token needs to be refreshed.
      */
+    // eslint-disable-next-line unusedImports/no-unused-vars
     protected tokenNeedsToBeRefreshed(request: HttpRequest<unknown>): boolean {
-        if (
-            request.url === this.authService.API_REFRESH_TOKEN_URL
-            || request.url === this.authService.API_LOGOUT_URL
-        ) {
-            return false;
-        }
         const tokenExpirationDate: Date = new Date(this.authService.authData?.accessToken.expirationDate as Date);
         const expirationInMs: number = tokenExpirationDate.getTime();
         return expirationInMs <= Date.now();
@@ -121,18 +120,22 @@ export class JwtInterceptor<
 
     /**
      * Checks whether or not the refresh token is expired.
-     *
      * @returns Whether or not the refresh token is expired.
+     * @throws When there is no logged in user.
      */
     protected refreshTokenExpired(): boolean {
-        const tokenExpirationDate: Date = new Date(this.authService.authData?.refreshToken.expirationDate as Date);
+        if (!this.authService.authData) {
+            // this should actually never be reached,
+            // because before this call there is a check for missing auth data.
+            throw new Error('There is no currently logged in user.');
+        }
+        const tokenExpirationDate: Date = new Date(this.authService.authData.refreshToken.expirationDate);
         const expirationInMs: number = tokenExpirationDate.getTime();
         return expirationInMs <= Date.now();
     }
 
     /**
      * Checks if the request is to an allowed domain.
-     *
      * @param request - The request to check.
      * @returns Whether the request is to an allowed domain or not. Defaults to true if no allowed host names were provided.
      */
@@ -150,7 +153,6 @@ export class JwtInterceptor<
     /**
      * Gets a normalized domain from an url.
      * Is used for comparing the request url with the allowed domains array.
-     *
      * @param url - The url to get the domain from.
      * @returns The domain of the url.
      */

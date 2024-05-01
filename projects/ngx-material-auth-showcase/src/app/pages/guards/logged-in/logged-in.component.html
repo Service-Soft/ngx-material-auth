@@ -1,3 +1,21 @@
-<p>
-  logged-in works!
-</p>
+<h1>Auth Data</h1>
+
+<div style="display: flex; column-gap: 15px;">
+    <div>
+        <b>Access Token Expiration</b>
+        <br>
+        <b>Refresh Token Expiration</b>
+    </div>
+    <div>
+        <div>{{authService.authData?.accessToken?.expirationDate | date: 'dd.MM.yyyy HH:mm'}}</div>
+        <div>{{authService.authData?.refreshToken?.expirationDate | date: 'dd.MM.yyyy HH:mm'}}</div>
+    </div>
+</div>
+
+<hr>
+
+<div style="display: flex; column-gap: 15px;">
+    <button mat-raised-button type="button" (click)="markAccessTokenAsExpired()">Mark Access Token as expired</button>
+    <button mat-raised-button type="button" (click)="markRefreshTokenAsExpired()">Mark Refresh Token as expired</button>
+    <button mat-raised-button type="button" (click)="getCurrentUserData()">Get current user data</button>
+</div>

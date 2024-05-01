@@ -1,25 +1,25 @@
-<!-- eslint-disable @angular-eslint/template/no-call-expression -->
+<!-- eslint-disable angular/no-call-expression -->
 <div class="mat-elevation-z8 login-box">
     <i class="title-icon fas fa-circle-user"></i>
     <h1>{{loginTitle}}</h1>
 
-    <form #formControl="ngForm" (ngSubmit)="onSubmit()">
+    <form #formControl="ngForm" (ngSubmit)="onSubmit(formControl)">
         <mat-form-field>
             <mat-label>{{emailInputLabel}}</mat-label>
-            <input matInput [(ngModel)]="email" name="email" #mail="ngModel" required email>
+            <input #mail="ngModel" matInput name="email" required email [(ngModel)]="email">
             <mat-error>{{getValidationErrorMessage(mail)}}</mat-error>
         </mat-form-field>
         <br>
         <mat-form-field>
             <mat-label>{{passwordInputLabel}}</mat-label>
             <input
-                [type]="hide ? 'password' : 'text'"
-                matInput
-                [(ngModel)]="password"
-                name="password"
                 #pw="ngModel"
-                required>
-            <button type="button" (click)="hide = !hide" mat-icon-button matSuffix>
+                matInput
+                name="password"
+                required
+                [type]="hide ? 'password' : 'text'"
+                [(ngModel)]="password">
+            <button class="hide-password" type="button" mat-icon-button matSuffix (click)="$event.stopPropagation(); hide = !hide">
                 <i *ngIf="hide" class="fas fa-eye-slash"></i>
                 <i *ngIf="!hide" class="fas fa-eye"></i>
             </button>

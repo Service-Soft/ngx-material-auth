@@ -46,6 +46,7 @@
 /***************************************************************************************************
  * Zone JS is required by default for Angular itself.
  */
+// eslint-disable-next-line eslintImport/no-unassigned-import
 import 'zone.js'; // Included with Angular CLI.
 
 
