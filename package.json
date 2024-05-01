@@ -20,7 +20,9 @@
         "copyToDist:contributing": "ncp ./CONTRIBUTING.md ./dist/ngx-material-auth/CONTRIBUTING.md",
         "copyToDist:license": "ncp ./LICENSE.md ./dist/ngx-material-auth/LICENSE.md",
         "test": "concurrently --kill-others 'npm run build:watch' 'run-s waitOn:build api' 'run-s waitOn:build test:showcase'",
-        "test:showcase": "ng test ngx-material-auth-showcase"
+        "test:ci": "concurrently --kill-others 'npm run build' 'run-s waitOn:build api' 'run-s waitOn:build test:showcase:ci'",
+        "test:showcase": "ng test ngx-material-auth-showcase",
+        "test:showcase:ci": "ng test ngx-material-auth-showcase --sourceMap=false --browsers=ChromeHeadless --watch=false"
     },
     "private": true,
     "dependencies": {
