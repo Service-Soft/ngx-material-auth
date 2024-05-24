@@ -2,11 +2,10 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { lastValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { CustomAuthService } from '../../../services/custom-auth.service';
-
 
 @Component({
     selector: 'app-logged-in',
@@ -23,7 +22,7 @@ export class LoggedInComponent {
     constructor(
         readonly authService: CustomAuthService,
         private readonly http: HttpClient
-    ) {}
+    ) { }
 
     markAccessTokenAsExpired(): void {
         if (!this.authService.authData) {
@@ -40,7 +39,7 @@ export class LoggedInComponent {
     }
 
     async getCurrentUserData(): Promise<void> {
-        const userData: string = await lastValueFrom(this.http.get(`${environment.apiUrl}/user-data`, { responseType: 'text' }));
+        const userData: string = await firstValueFrom(this.http.get(`${environment.apiUrl}/user-data`, { responseType: 'text' }));
         alert(`Got the user data: ${userData}`);
     }
 }

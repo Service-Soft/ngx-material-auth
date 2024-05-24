@@ -1,8 +1,18 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Output, QueryList, ViewChildren } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 
 const allowedValues: string[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+/**
+ * The value a step index might have. Ranges from 0 - 5.
+ */
+type StepIndex = 0 | 1 | 2 | 3 | 4 | 5;
+
+/**
+ * The value that can be set to a step input.
+ */
+type StepValue = '' | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
 
 /**
  * A component that displays an input for a 6 digit numeric two factor code.
@@ -20,17 +30,13 @@ const allowedValues: string[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9
 })
 export class NgxMatAuthTwoFactorCodeInputComponent {
     // eslint-disable-next-line jsdoc/require-jsdoc
-    one!: string;
-    // eslint-disable-next-line jsdoc/require-jsdoc
-    two!: string;
-    // eslint-disable-next-line jsdoc/require-jsdoc
-    three!: string;
-    // eslint-disable-next-line jsdoc/require-jsdoc
-    four!: string;
-    // eslint-disable-next-line jsdoc/require-jsdoc
-    five!: string;
-    // eslint-disable-next-line jsdoc/require-jsdoc
-    six!: string;
+    readonly steps: [StepValue, StepValue, StepValue, StepValue, StepValue, StepValue] = ['', '', '', '', '', ''];
+
+    /**
+     * The two factor input html elements.
+     */
+    @ViewChildren('code1,code2,code3,code4,code5,code6')
+    stepElements!: QueryList<ElementRef>;
 
     /**
      * Returns the code whenever the user inputs or removes something.
@@ -45,28 +51,32 @@ export class NgxMatAuthTwoFactorCodeInputComponent {
         'ArrowRight'
     ];
 
-    constructor() { }
-
     /**
      * When the user uses the backspace, the previous input is selected (if it exists).
      * When he types anything else, the next input is selected (if it exists).
      * @param event - The keyboard event contains eg. The key that was pressed.
-     * @param step - At which step the input happened.
+     * @param stepIndex - At which step the input happened.
      */
-    keyup(event: KeyboardEvent, step: number): void {
+    keyup(event: KeyboardEvent, stepIndex: StepIndex): void {
         if (this.keyCodesToIgnore.includes(event.key)) {
             return;
         }
-        const prevElement: HTMLElement | null = document.getElementById(`code${step - 1}`);
-        const nextElement: HTMLElement | null = document.getElementById(`code${step + 1}`);
-        const value: string = `${this.one ?? ''}${this.two ?? ''}${this.three ?? ''}${this.four ?? ''}${this.five ?? ''}${this.six ?? ''}`;
-        this.codeChangeEvent.emit(value);
+        const prevElement: ElementRef<HTMLElement> | undefined = this.stepElements.toArray()[stepIndex - 1] as ElementRef | undefined;
+        const nextElement: ElementRef<HTMLElement> | undefined = this.stepElements.toArray()[stepIndex + 1] as ElementRef | undefined;
         if (event.code === 'Backspace' && prevElement) {
-            prevElement.focus();
+            this.steps[stepIndex - 1] = '';
+            prevElement.nativeElement.focus();
+            const value: string = this.steps.join('');
+            this.codeChangeEvent.emit(value);
             return;
         }
         if (nextElement) {
-            nextElement.focus();
+            if (allowedValues.includes(event.key)) {
+                this.steps[stepIndex] = event.key as StepValue;
+            }
+            const value: string = this.steps.join('');
+            this.codeChangeEvent.emit(value);
+            nextElement.nativeElement.focus();
         }
     }
 
@@ -82,71 +92,44 @@ export class NgxMatAuthTwoFactorCodeInputComponent {
                 return;
             }
         }
-        this.one = pastedText.charAt(0);
-        this.two = pastedText.charAt(1);
-        this.three = pastedText.charAt(2);
-        this.four = pastedText.charAt(3);
-        this.five = pastedText.charAt(4);
-        this.six = pastedText.charAt(5);
-        const value: string = `${this.one ?? ''}${this.two ?? ''}${this.three ?? ''}${this.four ?? ''}${this.five ?? ''}${this.six ?? ''}`;
+        for (let i: number = 0; i < this.steps.length; i++) {
+            this.steps[i] = pastedText.charAt(i) as StepValue;
+        }
+        const value: string = this.steps.join('');
         this.codeChangeEvent.emit(value);
-    }
-
-    private isDigitValid(value: string): boolean {
-        return allowedValues.includes(value);
     }
 
     /**
      * Automatically moves the cursor to the correct input.
      * If eg. The first value hasn't been provided yet the user can't click on the input for the last value.
-     * @param step - The step that the user tries to focus.
+     * @param stepIndex - The step index that the user tries to focus.
      */
-    focused(step: number): void {
-        switch (step) {
-            case 1:
-                if (this.two || this.three || this.four || this.five || this.six) {
-                    document.getElementById('code2')?.focus();
-                }
-                return;
-            case 2:
-                if (this.three || this.four || this.five || this.six) {
-                    document.getElementById('code3')?.focus();
-                }
-                if (!this.one) {
-                    document.getElementById('code1')?.focus();
-                }
-                return;
-            case 3:
-                if (this.four || this.five || this.six) {
-                    document.getElementById('code4')?.focus();
-                }
-                if (!this.one || !this.two) {
-                    document.getElementById('code2')?.focus();
-                }
-                return;
-            case 4:
-                if (this.five || this.six) {
-                    document.getElementById('code5')?.focus();
-                }
-                if (!this.one || !this.two || !this.three) {
-                    document.getElementById('code3')?.focus();
-                }
-                return;
-            case 5:
-                if (this.six) {
-                    document.getElementById('code6')?.focus();
-                }
-                if (!this.one || !this.two || !this.three || !this.four) {
-                    document.getElementById('code4')?.focus();
-                }
-                return;
-            case 6:
-                if (!this.one || !this.two || !this.three || !this.four || !this.five) {
-                    document.getElementById('code5')?.focus();
-                }
-                return;
-            default:
-                break;
+    focused(stepIndex: StepIndex): void {
+        const firstEmptyInputIndex: number = this.steps.findIndex(s => !s);
+        if (stepIndex === firstEmptyInputIndex) {
+            return;
         }
+        if (firstEmptyInputIndex === -1) {
+            (this.stepElements.toArray()[5] as ElementRef<HTMLElement>).nativeElement.focus();
+        }
+        (this.stepElements.toArray()[firstEmptyInputIndex] as ElementRef<HTMLElement>).nativeElement.focus();
+
+        // let firstEmptyInputIndex: number | undefined = undefined;
+        // for (let i: number = 0; i < this.steps.length; i++) {
+        //     // The first time an empty input is reached
+        //     if (!this.steps[i] && firstEmptyInputIndex == undefined) {
+        //         if (stepIndex === i) {
+        //             // the cursor is at the correct input already, nothing needs to be done
+        //             return;
+        //         }
+        //         firstEmptyInputIndex = i;
+        //     }
+        //     // If an input with a value is reached after an empty input.
+        //     if (this.steps[i] && firstEmptyInputIndex != undefined) {
+        //         this.steps[i] = '';
+        //     }
+        // }
+        // firstEmptyInputIndex = firstEmptyInputIndex ?? 5;
+        // (this.stepElements.toArray()[firstEmptyInputIndex] as ElementRef<HTMLElement>).nativeElement.focus();
     }
 }

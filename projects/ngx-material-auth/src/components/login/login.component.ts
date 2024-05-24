@@ -64,28 +64,28 @@ export class NgxMatAuthLoginComponent<
      * @default 'Login'
      */
     @Input()
-    loginTitle!: string;
+    loginTitle: string = 'Login';
 
     /**
      * A custom label for the email input.
      * @default 'Email'
      */
     @Input()
-    emailInputLabel!: string;
+    emailInputLabel: string = 'Email';
 
     /**
      * A custom label for the password input.
      * @default 'Password'
      */
     @Input()
-    passwordInputLabel!: string;
+    passwordInputLabel: string = 'Password';
 
     /**
      * A custom label for the login button.
      * @default 'Login'
      */
     @Input()
-    loginButtonLabel!: string;
+    loginButtonLabel: string = 'Login';
 
     /**
      * Data for the forgot password link.
@@ -102,7 +102,14 @@ export class NgxMatAuthLoginComponent<
      * @default '/'
      */
     @Input()
-    routeAfterLogin!: string;
+    routeAfterLogin: string = '/';
+
+    /**
+     * Whether or not the user should be prompted for biometric login if the option is available.
+     * @default true
+     */
+    @Input()
+    automaticallyPromptForBiometricLogin: boolean = true;
 
     /**
      * The password input by the user.
@@ -127,15 +134,16 @@ export class NgxMatAuthLoginComponent<
         protected readonly router: Router
     ) { }
 
-    ngOnInit(): void {
+    async ngOnInit(): Promise<void> {
         this.getValidationErrorMessage = this.getValidationErrorMessage ?? this.defaultGetValidationErrorMessage;
-        this.loginTitle = this.loginTitle ?? 'Login';
-        this.emailInputLabel = this.emailInputLabel ?? 'Email';
-        this.passwordInputLabel = this.passwordInputLabel ?? 'Password';
-        this.loginButtonLabel = this.loginButtonLabel ?? 'Login';
+        this.forgotPasswordLinkData = this.forgotPasswordLinkData ?? {
+            displayName: 'Forgot your password?',
+            route: this.authService.REQUEST_RESET_PASSWORD_ROUTE
+        };
 
-        this.forgotPasswordLinkData = this.forgotPasswordLinkData ?? { displayName: 'Forgot your password?', route: this.authService.REQUEST_RESET_PASSWORD_ROUTE };
-        this.routeAfterLogin = this.routeAfterLogin ?? '/';
+        if (this.automaticallyPromptForBiometricLogin && !this.authService.authData && this.authService.biometricCredentials.length) {
+            await this.authService.loginWithBiometricAuthentication();
+        }
     }
 
     /**
@@ -147,7 +155,10 @@ export class NgxMatAuthLoginComponent<
             return;
         }
         try {
-            await this.authService.login({ email: this.email, password: this.password });
+            await this.authService.login({
+                email: this.email,
+                password: this.password
+            });
             form.resetForm();
             await this.router.navigateByUrl(this.routeAfterLogin);
         }

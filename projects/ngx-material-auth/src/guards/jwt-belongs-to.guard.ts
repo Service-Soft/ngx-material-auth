@@ -48,5 +48,7 @@ export const JwtBelongsToGuard: CanActivateFn = async (route: ActivatedRouteSnap
 
 // eslint-disable-next-line jsdoc/require-jsdoc, unusedImports/no-unused-vars
 function defaultGetBelongsToForRoute(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-    throw new Error('If you want to use the JwtBelongsToGuard, the guard configuration needs to be provided on the Injection Token NGX_GUARD_CONFIG.');
+    throw new Error(
+        'If you want to use the JwtBelongsToGuard, the guard configuration needs to be provided on the Injection Token NGX_GUARD_CONFIG.'
+    );
 }
