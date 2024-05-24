@@ -1,5 +1,4 @@
 
-
 import { Component, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { BaseRole, NgxMatAuthLoginComponent } from 'ngx-material-auth';
@@ -8,8 +7,8 @@ import { CustomAuthData, CustomAuthService, CustomToken, Roles } from '../../ser
 
 type UserIds = '1' | '2';
 
-const expirationDate: Date = new Date(Date.now() + 1 * 24 * 60 * 60 * 60);
-const expirationDateRefreshToken: Date = new Date(Date.now() + 5 * 24 * 60 * 60 * 60);
+const expirationDate: Date = new Date(Date.now() + (1 * 24 * 60 * 60 * 60));
+const expirationDateRefreshToken: Date = new Date(Date.now() + (5 * 24 * 60 * 60 * 60));
 
 const userAuthData: CustomAuthData[] = [
     {

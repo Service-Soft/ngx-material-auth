@@ -75,8 +75,15 @@ export class HttpErrorInterceptor<
                     void this.authService.logout();
                 }
                 if (this.errorDialogShouldBeDisplayed(error, request)) {
-                    const errorData: ErrorData = { name: 'HTTP-Error', message: this.getErrorDataMessage(error) };
-                    this.dialog.open(NgxMatAuthErrorDialogComponent, { data: errorData, autoFocus: false, restoreFocus: false });
+                    const errorData: ErrorData = {
+                        name: 'HTTP-Error',
+                        message: this.getErrorDataMessage(error)
+                    };
+                    this.dialog.open(NgxMatAuthErrorDialogComponent, {
+                        data: errorData,
+                        autoFocus: false,
+                        restoreFocus: false
+                    });
                 }
                 return throwError(() => error);
             })
@@ -114,7 +121,7 @@ export class HttpErrorInterceptor<
      * @returns The message of the http-error.
      */
     protected getErrorDataMessage(error: HttpErrorResponse): string {
-        if (error.error != null && typeof error.error === 'object') {
+        if (error.error != undefined && typeof error.error === 'object') {
             return this.getErrorDataMessage(error.error as HttpErrorResponse);
         }
 

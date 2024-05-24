@@ -1,4 +1,3 @@
-/* eslint-disable jsdoc/require-jsdoc */
 import { AfterContentChecked, Component, ElementRef, HostListener, ViewChild } from '@angular/core';
 import { FooterRow, NavbarRow } from 'ngx-material-navigation';
 
@@ -19,11 +18,8 @@ export class AppComponent implements AfterContentChecked {
     footerHeight!: number;
 
     ngAfterContentChecked(): void {
-        if (this.footer) {
-            this.footerHeight = this.footer.nativeElement.offsetHeight;
-        }
+        this.onResize();
     }
-
 
     @HostListener('window:resize', ['$event'])
     onResize(): void {

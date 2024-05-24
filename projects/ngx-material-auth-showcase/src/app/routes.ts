@@ -89,6 +89,18 @@ export const navbarRows: NavbarRow[] = [
                 name: 'Setup 2FA',
                 action: setup2FA,
                 condition: isLoggedIn
+            },
+            {
+                type: NavElementTypes.BUTTON,
+                name: 'Register Biometric Credential',
+                action: registerBiometricCredential,
+                condition: isLoggedIn
+            },
+            {
+                type: NavElementTypes.BUTTON,
+                name: 'Delete all Biometric Credential',
+                action: deleteAllBiometricCredentials,
+                condition: hasBiometricCredentials
             }
         ]
     }
@@ -125,14 +137,30 @@ export const routes: NavRoute[] = NavUtilities.getAngularRoutes(navbarRows, foot
     }
 ]);
 
-// eslint-disable-next-line jsdoc/require-jsdoc
 function setup2FA(): void {
     const service: CustomAuthService = inject(CustomAuthService);
     service.openTurnOn2FADialog();
 }
 
-// eslint-disable-next-line jsdoc/require-jsdoc
+function registerBiometricCredential(): void {
+    const service: CustomAuthService = inject(CustomAuthService);
+    void service.registerBiometricCredential()
+        .then(() => alert('Finished'))
+        // eslint-disable-next-line promise/prefer-await-to-callbacks
+        .catch(error => alert(error));
+}
+
 function isLoggedIn(): boolean {
     const service: CustomAuthService = inject(CustomAuthService);
     return !!service.authData;
+}
+
+function hasBiometricCredentials(): boolean {
+    const service: CustomAuthService = inject(CustomAuthService);
+    return !!service.biometricCredentials.length;
+}
+
+function deleteAllBiometricCredentials(): void {
+    const service: CustomAuthService = inject(CustomAuthService);
+    void service.deleteAllBiometricCredentials();
 }

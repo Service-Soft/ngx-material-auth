@@ -12,6 +12,7 @@ import { NgxMatNavigationFooterModule, NgxMatNavigationNavbarModule } from 'ngx-
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CustomAuthService } from './services/custom-auth.service';
+import { environment } from '../environments/environment';
 
 const guardConfig: Partial<NgxGuardConfig> = {
     belongsToGuard: {
@@ -41,17 +42,21 @@ const guardConfig: Partial<NgxGuardConfig> = {
         },
         {
             provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS,
-            useValue: ['localhost:3000']
+            useValue: ['localhost:3000', urlToDomain(environment.apiUrl)]
         },
         {
             provide: NGX_GUARD_CONFIG,
             useValue: guardConfig
         },
         {
-            provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true
+            provide: HTTP_INTERCEPTORS,
+            useClass: JwtInterceptor,
+            multi: true
         },
         {
-            provide: HTTP_INTERCEPTORS, useClass: HttpErrorInterceptor, multi: true
+            provide: HTTP_INTERCEPTORS,
+            useClass: HttpErrorInterceptor,
+            multi: true
         }
     ],
     bootstrap: [AppComponent]
@@ -68,8 +73,10 @@ function getBelongsToForRouteValue(route: ActivatedRouteSnapshot, state: RouterS
     if (!allowedUserIds?.length) {
         return false;
     }
-    if (allowedUserIds.find(id => id === authService.authData?.userId)) {
-        return true;
-    }
-    return false;
+    return !!allowedUserIds.find(id => id === authService.authData?.userId);
+}
+
+function urlToDomain(url: string): string {
+    url = url.split('//')[1];
+    return url;
 }

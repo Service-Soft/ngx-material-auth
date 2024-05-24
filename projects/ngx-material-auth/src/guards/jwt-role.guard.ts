@@ -6,7 +6,8 @@ import { JwtLoggedInGuardConfig } from './jwt-logged-in.guard';
 import { JwtAuthService, NGX_AUTH_SERVICE } from '../services/jwt-auth.service';
 
 // eslint-disable-next-line jsdoc/require-jsdoc
-type AllowedRolesFunction<RoleValue extends string> = ((route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => RoleValue[]) | ((route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => Promise<RoleValue[]>)
+type AllowedRolesFunction<RoleValue extends string> = ((route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => RoleValue[])
+    | ((route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => Promise<RoleValue[]>);
 
 /**
  * Configuration for the JwtRoleGuard.
@@ -56,7 +57,11 @@ export const JwtRoleGuard: CanActivateFn = async (route: ActivatedRouteSnapshot,
     return false;
 };
 
-// eslint-disable-next-line jsdoc/require-jsdoc, unusedImports/no-unused-vars
-function defaultGetAllowedRoleValuesForRoute<RoleValue extends string>(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): RoleValue[] {
+// eslint-disable-next-line jsdoc/require-jsdoc
+function defaultGetAllowedRoleValuesForRoute<RoleValue extends string>(
+    route: ActivatedRouteSnapshot,
+    // eslint-disable-next-line unusedImports/no-unused-vars
+    state: RouterStateSnapshot
+): RoleValue[] {
     return route.data['allowedRoles'] as RoleValue[] ?? [];
 }

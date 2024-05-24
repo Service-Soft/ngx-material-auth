@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { lastValueFrom } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
@@ -21,18 +21,18 @@ export class InterceptorsComponent {
     ) { }
 
     async produce404Error(): Promise<void> {
-        await lastValueFrom(this.http.get(`${environment.apiUrl}/throw-404`));
+        await firstValueFrom(this.http.get(`${environment.apiUrl}/throw-404`));
     }
 
     async produce401Error(): Promise<void> {
-        await lastValueFrom(this.http.get(`${environment.apiUrl}/throw-401`));
+        await firstValueFrom(this.http.get(`${environment.apiUrl}/throw-401`));
     }
 
     async sendRequestWithJwt(): Promise<void> {
-        await lastValueFrom(this.http.get(`${environment.apiUrl}/request-with-jwt`));
+        await firstValueFrom(this.http.get(`${environment.apiUrl}/request-with-jwt`));
     }
 
     async sendRequestWithoutJwt(): Promise<void> {
-        await lastValueFrom(this.http.get('http://www.google.de/request-without-jwt'));
+        await firstValueFrom(this.http.get('http://www.google.de/request-without-jwt'));
     }
 }

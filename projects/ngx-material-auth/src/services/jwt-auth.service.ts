@@ -3,33 +3,35 @@ import { InjectionToken, NgZone } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { BehaviorSubject, lastValueFrom } from 'rxjs';
+import { BehaviorSubject, firstValueFrom } from 'rxjs';
 
 import { NgxMatAuthErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
 import { NgxMatAuthSetupTwoFactorDialogComponent } from '../components/setup-two-factor-dialog/setup-two-factor-dialog.component';
 import { SetupTwoFactorDialogConfig } from '../components/setup-two-factor-dialog/setup-two-factor-dialog.config';
 import { NgxMatAuthTwoFactorDialogComponent } from '../components/two-factor-dialog/two-factor-dialog.component';
 import { TwoFactorDialogConfig } from '../components/two-factor-dialog/two-factor.dialog.config';
-import { BaseAuthData } from '../models/base-auth-data.model';
+import { BaseAuthData, BiometricCredentials } from '../models/base-auth-data.model';
 import { BaseRole } from '../models/base-role.model';
 import { BaseToken } from '../models/base-token.model';
 import { ErrorData } from '../models/error-data.model';
 import { LoginData } from '../models/login-data.model';
+import { WebauthnUtilities, PublicKeyCredentialCreationOptions, BiometricRegistrationResponse, ConfirmBiometricRegistrationResponse, AuthenticationResponse, PublicKeyCredentialRequestOptions } from '../utilities/webauthn.utilities';
 
 /**
  * Injection Token for the auth service.
  */
 // eslint-disable-next-line typescript/no-explicit-any
 export const NGX_AUTH_SERVICE: InjectionToken<JwtAuthService<any, any, any, any>> = new InjectionToken<JwtAuthService<any, any, any, any>>(
-    'Provide for the authService used eg. in guards or the login component.',
+    'Provider for the authService used eg. in guards or the login component.',
     {
         providedIn: 'root',
         factory: (() => {
             // eslint-disable-next-line no-console
             console.error(
+                // eslint-disable-next-line stylistic/max-len
                 'No AuthService has been provided for the token NGX_AUTH_SERVICE\nAdd this to your app.module.ts provider array:\n{\n    provide: NGX_AUTH_SERVICE,\n    useExisting: MyAuthService\n}'
             );
-        // eslint-disable-next-line typescript/no-explicit-any
+            // eslint-disable-next-line typescript/no-explicit-any
         }) as unknown as () => JwtAuthService<any, any, any, any>
     }
 );
@@ -89,12 +91,22 @@ export abstract class JwtAuthService<
     /**
      * The subject of the currently stored authData.
      */
-    authDataSubject: BehaviorSubject<AuthDataType | undefined>;
+    readonly authDataSubject: BehaviorSubject<AuthDataType | undefined>;
+
+    /**
+     * Subject to check if the access token is currently being refreshed.
+     */
+    readonly isRefreshingSubject: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
     /**
      * The key for the authData saved in local storage.
      */
     readonly AUTH_DATA_KEY: string = 'authData';
+
+    /**
+     * The key for the biometricCredentials saved in local storage.
+     */
+    readonly BIOMETRIC_CREDENTIALS_KEY: string = 'biometricCredentials';
 
     /**
      * The duration of the access token in milliseconds.
@@ -177,6 +189,26 @@ export abstract class JwtAuthService<
      * The api url to confirm turning on two factor authentication.
      */
     abstract readonly API_CONFIRM_TURN_ON_TWO_FACTOR_URL: string;
+    /**
+     * The api url for turning off two factor authentication.
+     */
+    abstract readonly API_TURN_OFF_TWO_FACTOR_URL: string;
+    /**
+     * The api url for registering a biometric credential.
+     */
+    abstract readonly API_REGISTER_BIOMETRIC_CREDENTIAL: string;
+    /**
+     * The api url for confirming the registration of a biometric credential.
+     */
+    abstract readonly API_CONFIRM_REGISTER_BIOMETRIC_CREDENTIAL: string;
+    /**
+     * The api url for getting all possible biometric credentials.
+     */
+    abstract readonly API_GENERATE_BIOMETRIC_AUTHENTICATION_OPTIONS: string;
+    /**
+     * The api url for canceling the registration of a biometric credential.
+     */
+    abstract readonly API_CANCEL_REGISTER_BIOMETRIC_CREDENTIAL: string;
 
     // eslint-disable-next-line jsdoc/require-returns
     /**
@@ -193,7 +225,38 @@ export abstract class JwtAuthService<
         if (!value) {
             localStorage.removeItem(this.AUTH_DATA_KEY);
         }
+        if (value?.biometricCredentials?.length) {
+            this.biometricCredentials = value.biometricCredentials;
+        }
         this.authDataSubject.next(value);
+    }
+
+    // eslint-disable-next-line jsdoc/require-returns
+    /**
+     * The biometricCredentials saved in local storage.
+     * This is separated from the auth data because it's also needed when the user is logged out.
+     */
+    get biometricCredentials(): BiometricCredentials[] {
+        const jsonString: string | null = localStorage.getItem(this.BIOMETRIC_CREDENTIALS_KEY);
+        if (!jsonString) {
+            return [];
+        }
+        return JSON.parse(jsonString) as BiometricCredentials[];
+    }
+
+    set biometricCredentials(value: BiometricCredentials[] | undefined) {
+        localStorage.setItem(this.BIOMETRIC_CREDENTIALS_KEY, JSON.stringify(value));
+        if (!value) {
+            localStorage.removeItem(this.BIOMETRIC_CREDENTIALS_KEY);
+        }
+    }
+
+    // eslint-disable-next-line jsdoc/require-returns
+    /**
+     * Whether or not the access token is currently being refreshed.
+     */
+    get isRefreshing(): boolean {
+        return this.isRefreshingSubject.value;
     }
 
     constructor(
@@ -223,7 +286,10 @@ export abstract class JwtAuthService<
         }
         if (typeof authData.roles[0] === 'string') {
             authData.roles = (authData.roles as unknown as RoleValue[]).map(r => {
-                return { displayName: r, value: r };
+                return {
+                    displayName: r,
+                    value: r
+                };
             }) as unknown as Role[];
         }
         return authData;
@@ -234,8 +300,8 @@ export abstract class JwtAuthService<
      * @param loginData - The data that is sent to the server to login the user.
      * @returns A promise of the received authData.
      */
-    async login(loginData: LoginData): Promise<AuthDataType> {
-        const res: AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse = await lastValueFrom(
+    async login(loginData: LoginData | AuthenticationResponse): Promise<AuthDataType> {
+        const res: AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse = await firstValueFrom(
             this.http.post<AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse>(this.API_LOGIN_URL, loginData)
         );
         if (this.isAuthDataType(res)) {
@@ -251,7 +317,7 @@ export abstract class JwtAuthService<
         if (!code) {
             throw new Error('No two factor code has been provided.');
         }
-        this.authData = await lastValueFrom(
+        this.authData = await firstValueFrom(
             this.http.post<AuthDataType>(this.API_LOGIN_URL, loginData, { headers: { [this.TWO_FACTOR_HEADER]: code } })
         );
         return this.authData;
@@ -264,13 +330,18 @@ export abstract class JwtAuthService<
         };
         const dialogRef: MatDialogRef<NgxMatAuthErrorDialogComponent, void> = this.dialog.open(
             NgxMatAuthErrorDialogComponent,
-            { data: data, disableClose: true, restoreFocus: false }
+            {
+                data: data,
+                disableClose: true,
+                restoreFocus: false
+            }
         );
-        await lastValueFrom(dialogRef.afterClosed());
+        await firstValueFrom(dialogRef.afterClosed());
     }
 
-
-    private isRequirePasswordChangeType(res: RequireTwoFactorResponse | RequirePasswordChangeResponse): res is RequirePasswordChangeResponse {
+    private isRequirePasswordChangeType(
+        res: RequireTwoFactorResponse | RequirePasswordChangeResponse
+    ): res is RequirePasswordChangeResponse {
         return !!(res as RequirePasswordChangeResponse).requirePasswordChange;
     }
 
@@ -282,9 +353,13 @@ export abstract class JwtAuthService<
     async openInput2FADialog(data?: Partial<TwoFactorDialogConfig>): Promise<string | undefined> {
         const dialogRef: MatDialogRef<NgxMatAuthTwoFactorDialogComponent, string> = this.dialog.open(
             NgxMatAuthTwoFactorDialogComponent,
-            { data: data, disableClose: true, restoreFocus: false }
+            {
+                data: data,
+                disableClose: true,
+                restoreFocus: false
+            }
         );
-        return lastValueFrom(dialogRef.afterClosed());
+        return firstValueFrom(dialogRef.afterClosed());
     }
 
     private isAuthDataType(value: AuthDataType | RequireTwoFactorResponse | RequirePasswordChangeResponse): value is AuthDataType {
@@ -301,7 +376,7 @@ export abstract class JwtAuthService<
         }
         const refreshTokenValue: string = this.authData.refreshToken.value;
         this.authData = undefined;
-        await lastValueFrom(this.http.post<void>(this.API_LOGOUT_URL, { refreshToken: refreshTokenValue }));
+        await firstValueFrom(this.http.post<void>(this.API_LOGOUT_URL, { refreshToken: refreshTokenValue }));
         await this.router.navigateByUrl(this.ROUTE_AFTER_LOGOUT);
     }
 
@@ -312,7 +387,22 @@ export abstract class JwtAuthService<
         if (!this.authData) {
             return;
         }
-        this.authData = await lastValueFrom(this.http.post<AuthDataType>(this.API_REFRESH_TOKEN_URL, { refreshToken: this.authData.refreshToken.value }));
+        if (this.isRefreshing) {
+            await firstValueFrom(this.isRefreshingSubject.asObservable());
+            return;
+        }
+        this.isRefreshingSubject.next(true);
+        try {
+            this.authData = await firstValueFrom(
+                this.http.post<AuthDataType>(this.API_REFRESH_TOKEN_URL, { refreshToken: this.authData.refreshToken.value })
+            );
+            this.isRefreshingSubject.next(false);
+        }
+        catch (error) {
+            this.isRefreshingSubject.next(false);
+            await this.logout();
+            throw error;
+        }
     }
 
     /**
@@ -321,7 +411,7 @@ export abstract class JwtAuthService<
      * @param email - The email of the user that wants to reset his password.
      */
     async requestResetPassword(email: string): Promise<void> {
-        await lastValueFrom(this.http.post<void>(this.API_REQUEST_RESET_PASSWORD_URL, { email: email }));
+        await firstValueFrom(this.http.post<void>(this.API_REQUEST_RESET_PASSWORD_URL, { email: email }));
         this.zone.run(() => {
             this.snackbar.open(this.REQUEST_RESET_PASSWORD_SNACK_BAR_MESSAGE, undefined, { duration: 5000 });
         });
@@ -333,7 +423,10 @@ export abstract class JwtAuthService<
      * @param resetToken - The token from the email. Needed to authorize the password reset.
      */
     async confirmResetPassword(newPassword: string, resetToken: string): Promise<void> {
-        await lastValueFrom(this.http.post<void>(this.API_CONFIRM_RESET_PASSWORD_URL, { password: newPassword, resetToken: resetToken }));
+        await firstValueFrom(this.http.post<void>(this.API_CONFIRM_RESET_PASSWORD_URL, {
+            password: newPassword,
+            resetToken: resetToken
+        }));
         this.zone.run(() => {
             this.snackbar.open(this.CONFIRM_RESET_PASSWORD_SNACK_BAR_MESSAGE, undefined, { duration: 5000 });
         });
@@ -345,7 +438,7 @@ export abstract class JwtAuthService<
      * @returns Whether or not the given token is valid.
      */
     async isResetTokenValid(resetToken: string): Promise<boolean> {
-        const res: VerifyResetTokenResponse = await lastValueFrom(
+        const res: VerifyResetTokenResponse = await firstValueFrom(
             this.http.post<VerifyResetTokenResponse>(this.API_VERIFY_RESET_PASSWORD_TOKEN_URL, { value: resetToken })
         );
         return res.isValid;
@@ -360,10 +453,7 @@ export abstract class JwtAuthService<
         if (!this.authData) {
             return false;
         }
-        if (allowedRolesValues.find(rv => this.authData?.roles.map(r => r.value).includes(rv))) {
-            return true;
-        }
-        return false;
+        return !!allowedRolesValues.find(rv => this.authData?.roles.map(r => r.value).includes(rv));
     }
 
     /**
@@ -371,7 +461,7 @@ export abstract class JwtAuthService<
      * @returns The response with the qr code url.
      */
     async turnOn2FA(): Promise<TwoFactorUrlResponse> {
-        return lastValueFrom(this.http.post<TwoFactorUrlResponse>(this.API_TURN_ON_TWO_FACTOR_URL, undefined));
+        return firstValueFrom(this.http.post<TwoFactorUrlResponse>(this.API_TURN_ON_TWO_FACTOR_URL, undefined));
     }
 
     /**
@@ -379,7 +469,11 @@ export abstract class JwtAuthService<
      * @param data - Configuration data for the dialog.
      */
     openTurnOn2FADialog(data?: Partial<SetupTwoFactorDialogConfig>): void {
-        this.dialog.open(NgxMatAuthSetupTwoFactorDialogComponent, { data: data, disableClose: true, restoreFocus: false });
+        this.dialog.open(NgxMatAuthSetupTwoFactorDialogComponent, {
+            data: data,
+            disableClose: true,
+            restoreFocus: false
+        });
     }
 
     /**
@@ -388,17 +482,85 @@ export abstract class JwtAuthService<
      * @param twoFactorCode - The two factor code that the user generated using eg. Google Authenticator.
      */
     async confirmTurnOn2FA(twoFactorCode: string): Promise<void> {
-        await lastValueFrom(
+        await firstValueFrom(
             this.http.post<void>(
                 this.API_CONFIRM_TURN_ON_TWO_FACTOR_URL,
                 undefined,
                 { headers: { [this.TWO_FACTOR_HEADER]: twoFactorCode } }
             )
         );
-        // @ts-ignore
         this.authData = {
-            ...this.authData,
+            ...(this.authData as AuthDataType),
             twoFactorEnabled: true
         };
+    }
+
+    /**
+     * Turns off two factor authentication for the current user.
+     */
+    async turnOff2FA(): Promise<void> {
+        await firstValueFrom(this.http.post<void>(this.API_TURN_OFF_TWO_FACTOR_URL, undefined));
+        if (this.authData) {
+            this.authData = {
+                ...this.authData,
+                twoFactorEnabled: false
+            };
+        }
+    }
+
+    /**
+     * Registers a new biometric credential for the currently logged in user.
+     */
+    async registerBiometricCredential(): Promise<void> {
+        if (!this.authData) {
+            // eslint-disable-next-line no-console
+            console.error('Registering new biometric credentials is only possible when already logged in');
+            return;
+        }
+        if (!WebauthnUtilities.browserSupportsWebAuthn()) {
+            // eslint-disable-next-line no-console
+            console.error('The current browser does not support webauthn.');
+            return;
+        }
+        const options: PublicKeyCredentialCreationOptions = await firstValueFrom(
+            this.http.post<PublicKeyCredentialCreationOptions>(this.API_REGISTER_BIOMETRIC_CREDENTIAL, undefined)
+        );
+        try {
+            const registrationResponse: BiometricRegistrationResponse = await WebauthnUtilities.startRegistration(options);
+            const confirmRegistrationResponse: ConfirmBiometricRegistrationResponse = await firstValueFrom(
+                this.http.post<ConfirmBiometricRegistrationResponse>(
+                    `${this.API_CONFIRM_REGISTER_BIOMETRIC_CREDENTIAL}/${options.challenge}`,
+                    registrationResponse
+                )
+            );
+            if (!confirmRegistrationResponse.verified) {
+                // TODO: How should this be handled?
+                throw new Error('Could not register a biometric credential');
+            }
+            this.authData = {
+                ...this.authData,
+                biometricCredentials: confirmRegistrationResponse.biometricCredentials
+            };
+        }
+        catch (error) {
+            await firstValueFrom(this.http.delete(`${this.API_CANCEL_REGISTER_BIOMETRIC_CREDENTIAL}/${options.challenge}`));
+            throw error;
+        }
+    }
+
+    /**
+     * Tries to login with biometric authentication.
+     */
+    async loginWithBiometricAuthentication(): Promise<void> {
+        if (!this.biometricCredentials.length) {
+            return;
+        }
+        const options: PublicKeyCredentialRequestOptions = await firstValueFrom(
+            this.http.get<PublicKeyCredentialRequestOptions>(
+                `${this.API_GENERATE_BIOMETRIC_AUTHENTICATION_OPTIONS}/${this.biometricCredentials[0].baseUserId}`
+            )
+        );
+        const authenticationResponse: AuthenticationResponse = await WebauthnUtilities.startAuthentication(options);
+        await this.login(authenticationResponse);
     }
 }

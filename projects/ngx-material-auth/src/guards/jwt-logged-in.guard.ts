@@ -44,7 +44,7 @@ export const JwtLoggedInGuard: CanActivateFn = async (route: ActivatedRouteSnaps
     const routeAfterRedirect: string = config.loggedInGuard?.routeAfterRedirect ?? '/';
     const userShouldBeLoggedOut: BooleanFunction = config.loggedInGuard?.userShouldBeLoggedOut ?? (() => true);
 
-    if (authService.authData != null) {
+    if (authService.authData != undefined) {
         return true;
     }
     if (await userShouldBeLoggedOut(route, state)) {
