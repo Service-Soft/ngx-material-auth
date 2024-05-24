@@ -20,8 +20,9 @@ import { ErrorData } from '../../models/error-data.model';
 export class NgxMatAuthErrorDialogComponent {
 
     constructor(
-        public dialogRef: MatDialogRef<NgxMatAuthErrorDialogComponent>,
-        @Inject(MAT_DIALOG_DATA) public error: ErrorData
+        private readonly dialogRef: MatDialogRef<NgxMatAuthErrorDialogComponent>,
+        @Inject(MAT_DIALOG_DATA)
+        readonly error: ErrorData
     ) { }
 
     /**

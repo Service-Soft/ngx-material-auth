@@ -75,7 +75,10 @@ export class NgxMatAuthSetupTwoFactorDialogComponent<
         };
         const response: TwoFactorUrlResponse = await this.authService.turnOn2FA();
         const canvas: HTMLCanvasElement = document.getElementById('2fa-canvas') as HTMLCanvasElement;
-        await toCanvas(canvas, response.url, { width: 180, margin: 0 });
+        await toCanvas(canvas, response.url, {
+            width: 180,
+            margin: 0
+        });
         this.secret = this.getSecretFromCode(response.url);
     }
 

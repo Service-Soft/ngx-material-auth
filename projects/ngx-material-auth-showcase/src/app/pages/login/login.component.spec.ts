@@ -11,11 +11,9 @@ import { NGX_AUTH_SERVICE } from 'ngx-material-auth';
 import { LoginComponent } from './login.component';
 import { CustomAuthService } from '../../services/custom-auth.service';
 
-
 const mockForm: NgForm = {
     resetForm: () => {}
 } as unknown as NgForm;
-
 
 describe('LoginComponent', () => {
     let fixture: ComponentFixture<LoginComponent>;

@@ -158,16 +158,19 @@ export class NgxMatAuthConfirmResetPasswordComponent<
         this.resetToken = (await firstValueFrom(this.route.params))['token'] as string | undefined;
         if (
             !this.resetToken
-            || !(await this.authService.isResetTokenValid(this.resetToken))
+            || !await this.authService.isResetTokenValid(this.resetToken)
         ) {
             await this.router.navigateByUrl(this.routeIfResetTokenInvalid);
             this.zone.run(() => {
                 this.dialog.open(
                     NgxMatAuthErrorDialogComponent,
-                    { data: this.invalidResetTokenErrorData, autoFocus: false, restoreFocus: false }
+                    {
+                        data: this.invalidResetTokenErrorData,
+                        autoFocus: false,
+                        restoreFocus: false
+                    }
                 );
             });
-            return;
         }
     }
 
@@ -175,6 +178,7 @@ export class NgxMatAuthConfirmResetPasswordComponent<
         this.getValidationErrorMessage = this.getValidationErrorMessage ?? this.defaultGetValidationErrorMessage;
         this.confirmResetPasswordTitle = this.confirmResetPasswordTitle ?? 'New Password';
         this.passwordInputLabel = this.passwordInputLabel ?? 'Password';
+        // eslint-disable-next-line unicorn/no-null
         this.minLength = this.minLength ?? null;
         this.changePasswordButtonLabel = this.changePasswordButtonLabel ?? 'Change Password';
         this.cancelButtonLabel = this.cancelButtonLabel ?? 'Cancel';

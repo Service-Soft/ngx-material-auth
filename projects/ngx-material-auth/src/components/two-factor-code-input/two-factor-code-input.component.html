@@ -1,80 +1,74 @@
 <div class="code-container">
-    <input matInput
-        id="code1"
+    <input #code1
+        matInput
         minlength="1"
         maxlength="1"
         pattern="[0-9]"
         oninput="validity.valid || (value='');"
-       
-        [class.valid]="one"
-        [(ngModel)]="one"
+        [class.valid]="steps[0]"
+        [(ngModel)]="steps[0]"
+        (keyup)="keyup($event, 0)"
+        (focus)="focused(0)"
+        (paste)="paste($event)"
+    >
+    <input #code2
+        matInput
+        minlength="1"
+        maxlength="1"
+        pattern="[0-9]"
+        oninput="validity.valid || (value='');"
+        [class.valid]="steps[1]"
+        [(ngModel)]="steps[1]"
         (keyup)="keyup($event, 1)"
         (focus)="focused(1)"
         (paste)="paste($event)"
     >
-    <input matInput
-        id="code2"
+    <input #code3
+        matInput
         minlength="1"
         maxlength="1"
         pattern="[0-9]"
         oninput="validity.valid || (value='');"
-       
-        [class.valid]="two"
-        [(ngModel)]="two"
+        [class.valid]="steps[2]"
+        [(ngModel)]="steps[2]"
         (keyup)="keyup($event, 2)"
         (focus)="focused(2)"
         (paste)="paste($event)"
     >
-    <input matInput
-        id="code3"
+    <input #code4
+        matInput
         minlength="1"
         maxlength="1"
         pattern="[0-9]"
         oninput="validity.valid || (value='');"
-       
-        [class.valid]="three"
-        [(ngModel)]="three"
+        [class.valid]="steps[3]"
+        [(ngModel)]="steps[3]"
         (keyup)="keyup($event, 3)"
         (focus)="focused(3)"
         (paste)="paste($event)"
     >
-    <input matInput
-        id="code4"
+    <input #code5
+        matInput
         minlength="1"
         maxlength="1"
         pattern="[0-9]"
         oninput="validity.valid || (value='');"
-       
-        [class.valid]="four"
-        [(ngModel)]="four"
+        [class.valid]="steps[4]"
+        [(ngModel)]="steps[4]"
         (keyup)="keyup($event, 4)"
         (focus)="focused(4)"
         (paste)="paste($event)"
     >
-    <input matInput
-        id="code5"
+    <input #code6
+        matInput
         minlength="1"
         maxlength="1"
         pattern="[0-9]"
         oninput="validity.valid || (value='');"
-       
-        [class.valid]="five"
-        [(ngModel)]="five"
+        [class.valid]="steps[5]"
+        [(ngModel)]="steps[5]"
         (keyup)="keyup($event, 5)"
         (focus)="focused(5)"
-        (paste)="paste($event)"
-    >
-    <input matInput
-        id="code6"
-        minlength="1"
-        maxlength="1"
-        pattern="[0-9]"
-        oninput="validity.valid || (value='');"
-       
-        [class.valid]="six"
-        [(ngModel)]="six"
-        (keyup)="keyup($event, 6)"
-        (focus)="focused(6)"
         (paste)="paste($event)"
     >
 </div>

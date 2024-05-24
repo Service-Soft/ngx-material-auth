@@ -17,6 +17,7 @@ export const NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS: InjectionToken<string[]> = new
         factory: () => {
             // eslint-disable-next-line no-console
             console.warn(
+                // eslint-disable-next-line stylistic/max-len
                 'No allowedDomains have been provided for the token NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS.\nRight now every http-request adds the jwt token. It is encouraged to provide a value for this to prohibit sending jwt tokens to e.g. third party apis.\nAdd this to your app.module.ts provider array:\n{\n    provide: NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS,\n    useValue: ["myDomain", "myOtherDomain"]\n}'
             );
         }
@@ -144,10 +145,7 @@ export class JwtInterceptor<
             return false;
         }
         const domain: string = this.getDomainFromUrl(request.url);
-        if (this.allowedDomains.includes(domain)) {
-            return false;
-        }
-        return true;
+        return !this.allowedDomains.includes(domain);
     }
 
     /**

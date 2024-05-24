@@ -28,6 +28,7 @@ export class TwoFactorInterceptor implements HttpInterceptor {
         @Inject(NGX_JWT_INTERCEPTOR_RESTRICTED_URLS)
         protected readonly restrictedUrls: string[],
         @Inject(NGX_AUTH_SERVICE)
+        // eslint-disable-next-line stylistic/max-len
         protected readonly authService: JwtAuthService<BaseAuthData<BaseToken, string, BaseRole<string>>, string, BaseRole<string>, BaseToken>
     ) {}
 
