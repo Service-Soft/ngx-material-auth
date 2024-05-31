@@ -1,12 +1,23 @@
 import { AfterContentChecked, Component, ElementRef, HostListener, ViewChild } from '@angular/core';
-import { FooterRow, NavbarRow } from 'ngx-material-navigation';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { RouterModule } from '@angular/router';
+import { FooterRow, NavbarRow, NgxMatNavigationFooterComponent, NgxMatNavigationNavbarComponent } from 'ngx-material-navigation';
 
 import { footerRows, navbarRows } from './routes';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss']
+    styleUrls: ['./app.component.scss'],
+    standalone: true,
+    imports: [
+        MatDialogModule,
+        MatSnackBarModule,
+        NgxMatNavigationFooterComponent,
+        NgxMatNavigationNavbarComponent,
+        RouterModule
+    ]
 })
 export class AppComponent implements AfterContentChecked {
     navbarRows: NavbarRow[] = navbarRows;

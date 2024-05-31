@@ -7,8 +7,6 @@ import { NgxMatAuthConfirmResetPasswordComponent } from 'ngx-material-auth';
     templateUrl: './confirm-reset-password.component.html',
     styleUrls: ['./confirm-reset-password.component.scss'],
     standalone: true,
-    imports: [
-        NgxMatAuthConfirmResetPasswordComponent
-    ]
+    imports: [NgxMatAuthConfirmResetPasswordComponent]
 })
 export class ConfirmResetPasswordComponent { }

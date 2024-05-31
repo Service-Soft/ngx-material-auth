@@ -6,8 +6,6 @@ import { NgxMatAuthRequestResetPasswordComponent } from 'ngx-material-auth';
     templateUrl: './request-reset-password.component.html',
     styleUrls: ['./request-reset-password.component.scss'],
     standalone: true,
-    imports: [
-        NgxMatAuthRequestResetPasswordComponent
-    ]
+    imports: [NgxMatAuthRequestResetPasswordComponent]
 })
 export class RequestResetPasswordComponent { }

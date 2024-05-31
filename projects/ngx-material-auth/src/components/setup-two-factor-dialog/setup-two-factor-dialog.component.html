@@ -1,9 +1,9 @@
 <b mat-dialog-title>{{data.title}}</b>
 
 <mat-dialog-content>
-    <p *ngFor="let paragraph of data.description">
-        {{paragraph}}
-    </p>
+    @for (paragraph of data.description; track $index) {
+        <p>{{paragraph}}</p>
+    }
 
     <!-- QR Code //TODO -->
     <div class="qr-container">

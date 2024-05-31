@@ -10,9 +10,7 @@ import { environment } from '../../../environments/environment';
     templateUrl: './interceptors.component.html',
     styleUrls: ['./interceptors.component.scss'],
     standalone: true,
-    imports: [
-        MatButtonModule
-    ]
+    imports: [MatButtonModule]
 })
 export class InterceptorsComponent {
 

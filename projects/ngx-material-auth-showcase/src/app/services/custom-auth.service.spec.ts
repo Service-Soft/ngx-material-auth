@@ -1,6 +1,6 @@
 /* eslint-disable cspell/spellchecker */
 /* eslint-disable sonar/no-duplicate-string */
-import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
@@ -16,11 +16,11 @@ describe('CustomAuthService', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [
-                HttpClientModule,
                 MatSnackBarModule,
                 MatDialogModule
             ],
             providers: [
+                provideHttpClient(withInterceptorsFromDi()),
                 {
                     provide: NGX_AUTH_SERVICE,
                     useExisting: CustomAuthService
