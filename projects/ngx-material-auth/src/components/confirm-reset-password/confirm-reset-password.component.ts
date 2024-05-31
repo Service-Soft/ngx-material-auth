@@ -153,25 +153,28 @@ export class NgxMatAuthConfirmResetPasswordComponent<
         protected readonly dialog: MatDialog
     ) { }
 
-    async ngOnInit(): Promise<void> {
+    ngOnInit(): void {
         this.initDefaultValues();
-        this.resetToken = (await firstValueFrom(this.route.params))['token'] as string | undefined;
-        if (
-            !this.resetToken
-            || !await this.authService.isResetTokenValid(this.resetToken)
-        ) {
-            await this.router.navigateByUrl(this.routeIfResetTokenInvalid);
-            this.zone.run(() => {
-                this.dialog.open(
-                    NgxMatAuthErrorDialogComponent,
-                    {
-                        data: this.invalidResetTokenErrorData,
-                        autoFocus: false,
-                        restoreFocus: false
-                    }
-                );
-            });
-        }
+        // eslint-disable-next-line promise/prefer-await-to-then
+        void firstValueFrom(this.route.params).then(async params => {
+            this.resetToken = params['token'] as string | undefined;
+            if (
+                !this.resetToken
+                || !await this.authService.isResetTokenValid(this.resetToken)
+            ) {
+                await this.router.navigateByUrl(this.routeIfResetTokenInvalid);
+                this.zone.run(() => {
+                    this.dialog.open(
+                        NgxMatAuthErrorDialogComponent,
+                        {
+                            data: this.invalidResetTokenErrorData,
+                            autoFocus: false,
+                            restoreFocus: false
+                        }
+                    );
+                });
+            }
+        });
     }
 
     private initDefaultValues(): void {

@@ -134,7 +134,7 @@ export class NgxMatAuthLoginComponent<
         protected readonly router: Router
     ) { }
 
-    async ngOnInit(): Promise<void> {
+    ngOnInit(): void {
         this.getValidationErrorMessage = this.getValidationErrorMessage ?? this.defaultGetValidationErrorMessage;
         this.forgotPasswordLinkData = this.forgotPasswordLinkData ?? {
             displayName: 'Forgot your password?',
@@ -142,7 +142,7 @@ export class NgxMatAuthLoginComponent<
         };
 
         if (this.automaticallyPromptForBiometricLogin && !this.authService.authData && this.authService.biometricCredentials.length) {
-            await this.authService.loginWithBiometricAuthentication();
+            void this.authService.loginWithBiometricAuthentication();
         }
     }
 

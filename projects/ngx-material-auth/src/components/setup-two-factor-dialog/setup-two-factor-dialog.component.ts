@@ -8,7 +8,7 @@ import { SetupTwoFactorDialogConfig } from './setup-two-factor-dialog.config';
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseRole } from '../../models/base-role.model';
 import { BaseToken } from '../../models/base-token.model';
-import { JwtAuthService, NGX_AUTH_SERVICE, TwoFactorUrlResponse } from '../../services/jwt-auth.service';
+import { JwtAuthService, NGX_AUTH_SERVICE } from '../../services/jwt-auth.service';
 import { NgxMatAuthTwoFactorCodeInputComponent } from '../two-factor-code-input/two-factor-code-input.component';
 
 /**
@@ -60,7 +60,7 @@ export class NgxMatAuthSetupTwoFactorDialogComponent<
         this.dialogRef.disableClose = true;
     }
 
-    async ngOnInit(): Promise<void> {
+    ngOnInit(): void {
         this.data = {
             title: this.inputData?.title ?? 'Two-Factor Authentication',
             description: this.inputData?.description ?? [
@@ -73,13 +73,15 @@ export class NgxMatAuthSetupTwoFactorDialogComponent<
             cancelButtonLabel: this.inputData?.cancelButtonLabel ?? 'Cancel',
             confirmButtonLabel: this.inputData?.confirmButtonLabel ?? 'Activate'
         };
-        const response: TwoFactorUrlResponse = await this.authService.turnOn2FA();
-        const canvas: HTMLCanvasElement = document.getElementById('2fa-canvas') as HTMLCanvasElement;
-        await toCanvas(canvas, response.url, {
-            width: 180,
-            margin: 0
+        // eslint-disable-next-line promise/prefer-await-to-then
+        void this.authService.turnOn2FA().then(async response => {
+            const canvas: HTMLCanvasElement = document.getElementById('2fa-canvas') as HTMLCanvasElement;
+            await toCanvas(canvas, response.url, {
+                width: 180,
+                margin: 0
+            });
+            this.secret = this.getSecretFromCode(response.url);
         });
-        this.secret = this.getSecretFromCode(response.url);
     }
 
     private getSecretFromCode(qrCode: string): string {

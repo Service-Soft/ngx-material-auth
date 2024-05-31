@@ -42,7 +42,7 @@ export class NgxMatAuthTwoFactorCodeInputComponent {
      * Returns the code whenever the user inputs or removes something.
      */
     @Output()
-    codeChangeEvent: EventEmitter<string> = new EventEmitter<string>();
+    readonly codeChangeEvent: EventEmitter<string> = new EventEmitter<string>();
 
     private readonly keyCodesToIgnore: string[] = [
         'ArrowUp',
