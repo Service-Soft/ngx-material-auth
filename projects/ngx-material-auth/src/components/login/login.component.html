@@ -20,8 +20,7 @@
                 [type]="hide ? 'password' : 'text'"
                 [(ngModel)]="password">
             <button class="hide-password" type="button" mat-icon-button matSuffix (click)="$event.stopPropagation(); hide = !hide">
-                <i *ngIf="hide" class="fas fa-eye-slash"></i>
-                <i *ngIf="!hide" class="fas fa-eye"></i>
+                <i class="fas" [class.fa-eye-slash]="hide" [class.fa-eye]="!hide"></i>
             </button>
             <mat-error>{{getValidationErrorMessage(pw)}}</mat-error>
         </mat-form-field>

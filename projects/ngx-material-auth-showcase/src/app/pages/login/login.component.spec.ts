@@ -1,14 +1,13 @@
 /* eslint-disable cspell/spellchecker */
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NgForm } from '@angular/forms';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
 import { NGX_AUTH_SERVICE } from 'ngx-material-auth';
 
 import { LoginComponent } from './login.component';
+import { routes } from '../../routes';
 import { CustomAuthService } from '../../services/custom-auth.service';
 
 const mockForm: NgForm = {
@@ -21,14 +20,10 @@ describe('LoginComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [
-                BrowserAnimationsModule,
-                HttpClientModule,
-                MatSnackBarModule,
-                MatDialogModule,
-                RouterTestingModule
-            ],
             providers: [
+                provideHttpClient(withInterceptorsFromDi()),
+                provideRouter(routes),
+                provideAnimations(),
                 {
                     provide: NGX_AUTH_SERVICE,
                     useExisting: CustomAuthService
