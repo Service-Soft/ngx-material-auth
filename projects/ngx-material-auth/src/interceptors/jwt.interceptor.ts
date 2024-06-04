@@ -62,18 +62,17 @@ export class JwtInterceptor<
             this.authService.authData = undefined;
             return next.handle(request);
         }
-        // There is a logged that does not need refreshing.
-        if (!this.tokenNeedsToBeRefreshed(request)) {
-            request = request.clone({
-                setHeaders: {
-                    authorization: `Bearer ${this.authService.authData.accessToken.value}`
-                }
-            });
-            return next.handle(request);
+        if (this.tokenNeedsToBeRefreshed(request)) {
+            // there is a user that is currently logged in but needs refreshing.
+            return this.refreshAndHandle(request, next);
         }
-
-        // there is a user that is currently logged in but needs refreshing.
-        return this.refreshAndHandle(request, next);
+        // There is a logged that does not need refreshing.
+        request = request.clone({
+            setHeaders: {
+                authorization: `Bearer ${this.authService.authData.accessToken.value}`
+            }
+        });
+        return next.handle(request);
     }
 
     /**

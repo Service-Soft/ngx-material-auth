@@ -1,3 +1,5 @@
+<div style="text-align: center;">Token expired? {{tokenExpired}}</div>
+
 <div class="buttons-row">
     <button type="button" mat-raised-button (click)="produce404Error()">Produce 404 Error</button>
     <button type="button" mat-raised-button (click)="produce401Error()">Produce 401 Error</button>
@@ -5,5 +7,6 @@
 
 <div class="buttons-row">
     <button type="button" mat-raised-button (click)="sendRequestWithJwt()">Send Request with jwt</button>
+    <button type="button" mat-raised-button (click)="sendMultipleRequestsWithJwt()">Send multiple Requests with jwt</button>
     <button type="button" mat-raised-button (click)="sendRequestWithoutJwt()">Send Request without jwt</button>
 </div>

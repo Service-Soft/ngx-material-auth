@@ -3,7 +3,7 @@ import { InjectionToken, NgZone } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { BehaviorSubject, filter, firstValueFrom } from 'rxjs';
 
 import { NgxMatAuthErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
 import { NgxMatAuthSetupTwoFactorDialogComponent } from '../components/setup-two-factor-dialog/setup-two-factor-dialog.component';
@@ -388,7 +388,7 @@ export abstract class JwtAuthService<
             return;
         }
         if (this.isRefreshing) {
-            await firstValueFrom(this.isRefreshingSubject.asObservable());
+            await firstValueFrom(this.isRefreshingSubject.asObservable().pipe(filter(v => !v)));
             return;
         }
         this.isRefreshingSubject.next(true);
