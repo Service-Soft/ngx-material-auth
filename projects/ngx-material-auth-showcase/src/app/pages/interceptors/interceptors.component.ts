@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { CustomAuthService } from '../../services/custom-auth.service';
 
 @Component({
     selector: 'app-interceptors',
@@ -14,8 +15,15 @@ import { environment } from '../../../environments/environment';
 })
 export class InterceptorsComponent {
 
+    get tokenExpired(): boolean {
+        const tokenExpirationDate: Date = new Date(this.authService.authData?.accessToken.expirationDate as Date);
+        const expirationInMs: number = tokenExpirationDate.getTime();
+        return expirationInMs <= Date.now();
+    }
+
     constructor(
-        private readonly http: HttpClient
+        private readonly http: HttpClient,
+        private readonly authService: CustomAuthService
     ) { }
 
     async produce404Error(): Promise<void> {
@@ -28,6 +36,20 @@ export class InterceptorsComponent {
 
     async sendRequestWithJwt(): Promise<void> {
         await firstValueFrom(this.http.get(`${environment.apiUrl}/request-with-jwt`));
+    }
+
+    async sendMultipleRequestsWithJwt(): Promise<void> {
+        await Promise.all([
+            this.sendRequestWithJwt(),
+            this.sendRequestWithJwt(),
+            this.sendRequestWithJwt(),
+            this.sendRequestWithJwt(),
+            this.sendRequestWithJwt()
+        ]);
+        // eslint-disable-next-line typescript/no-misused-promises
+        setTimeout(() => this.sendRequestWithJwt(), 200);
+        // eslint-disable-next-line typescript/no-misused-promises
+        setTimeout(() => this.sendRequestWithJwt(), 500);
     }
 
     async sendRequestWithoutJwt(): Promise<void> {

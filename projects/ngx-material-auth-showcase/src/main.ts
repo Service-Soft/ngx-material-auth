@@ -1,6 +1,6 @@
 /* eslint-disable promise/prefer-await-to-callbacks */
 /* eslint-disable no-console */
-import { HTTP_INTERCEPTORS, provideHttpClient } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { enableProdMode, inject } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
@@ -46,7 +46,7 @@ bootstrapApplication(
         providers: [
             provideRouter(routes),
             provideAnimations(),
-            provideHttpClient(),
+            provideHttpClient(withInterceptorsFromDi()),
             {
                 provide: NGX_AUTH_SERVICE,
                 useExisting: CustomAuthService
