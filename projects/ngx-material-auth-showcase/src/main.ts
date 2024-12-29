@@ -19,7 +19,7 @@ if (environment.production) {
 // eslint-disable-next-line unusedImports/no-unused-vars
 function getBelongsToForRouteValue(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
     const authService: CustomAuthService = inject(CustomAuthService);
-    if (!authService.authData?.userId) {
+    if (authService.authData?.userId) {
         return false;
     }
     const allowedUserIds: string[] | undefined = route.data['allowedUserIds'] as string[] | undefined;

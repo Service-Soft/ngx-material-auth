@@ -1,5 +1,6 @@
-/* eslint-disable promise/prefer-await-to-then */
+
 import { inject } from '@angular/core';
+import { faHome, faLock, faUser } from '@fortawesome/free-solid-svg-icons';
 import { JwtBelongsToGuard, JwtLoggedInGuard, JwtRoleGuard } from 'ngx-material-auth';
 import { FooterRow, NavElementTypes, NavbarRow, NavUtilities, NavRoute } from 'ngx-material-navigation';
 
@@ -18,7 +19,7 @@ export const navbarRows: NavbarRow[] = [
                     path: '',
                     loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent)
                 },
-                icon: 'fas fa-home',
+                icon: faHome,
                 name: 'Home',
                 collapse: 'never'
             },
@@ -29,13 +30,13 @@ export const navbarRows: NavbarRow[] = [
                     path: 'login',
                     loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent)
                 },
-                icon: 'fas fa-user',
+                icon: faUser,
                 name: 'Login',
                 collapse: 'sm'
             },
             {
                 type: NavElementTypes.MENU,
-                icon: 'fas fa-lock',
+                icon: faLock,
                 name: 'Restricted Routes',
                 collapse: 'sm',
                 elements: [

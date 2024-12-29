@@ -1,5 +1,6 @@
+import { isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest, HttpStatusCode } from '@angular/common/http';
-import { Inject, Injectable } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import { Observable, catchError, throwError } from 'rxjs';
@@ -57,7 +58,9 @@ export class HttpErrorInterceptor<
         protected readonly router: Router,
         @Inject(NGX_AUTH_SERVICE)
         protected readonly authService: AuthServiceType,
-        protected readonly dialog: MatDialog
+        protected readonly dialog: MatDialog,
+        @Inject(PLATFORM_ID)
+        protected readonly platformId: Object
     ) { }
 
     /**
@@ -129,6 +132,9 @@ export class HttpErrorInterceptor<
             return error.message;
         }
         if (this.isCORSError(error)) {
+            if (!isPlatformBrowser(this.platformId)) {
+                return this.CORS_ERROR_MESSAGE;
+            }
             if (!window.navigator.onLine) {
                 return this.NO_INTERNET_CONNECTION_ERROR_MESSAGE;
             }
