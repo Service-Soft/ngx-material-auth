@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, NgZone } from '@angular/core';
+import { Inject, Injectable, NgZone, PLATFORM_ID } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -42,9 +42,11 @@ export class CustomAuthService extends JwtAuthService<CustomAuthData, Roles, Bas
         snackBar: MatSnackBar,
         ngZone: NgZone,
         router: Router,
-        dialog: MatDialog
+        dialog: MatDialog,
+        @Inject(PLATFORM_ID)
+        platformId: Object
     ) {
-        super(http, snackBar, ngZone, router, dialog);
+        super(http, snackBar, ngZone, router, dialog, platformId);
     }
 
     async deleteAllBiometricCredentials(): Promise<void> {

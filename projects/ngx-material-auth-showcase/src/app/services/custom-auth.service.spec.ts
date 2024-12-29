@@ -1,10 +1,8 @@
 /* eslint-disable cspell/spellchecker */
-/* eslint-disable sonar/no-duplicate-string */
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import jasmine from 'jasmine';
 import { JwtInterceptor, NGX_AUTH_SERVICE, NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS } from 'ngx-material-auth';
 import { firstValueFrom } from 'rxjs';
 
@@ -70,7 +68,7 @@ describe('CustomAuthService', () => {
                 password: 'stringstring'
             });
         }
-        catch (error) { }
+        catch { }
         expect(service.authData).toBeUndefined();
     });
 

@@ -1,5 +1,6 @@
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { InjectionToken, NgZone } from '@angular/core';
+import { Inject, InjectionToken, NgZone, PLATFORM_ID } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
@@ -220,6 +221,9 @@ export abstract class JwtAuthService<
     }
 
     set authData(value: AuthDataType | undefined) {
+        if (!isPlatformBrowser(this.platformId)) {
+            return;
+        }
         value = this.transformAuthDataBeforeSetting(value);
         localStorage.setItem(this.AUTH_DATA_KEY, JSON.stringify(value));
         if (!value) {
@@ -237,6 +241,9 @@ export abstract class JwtAuthService<
      * This is separated from the auth data because it's also needed when the user is logged out.
      */
     get biometricCredentials(): BiometricCredentials[] {
+        if (!isPlatformBrowser(this.platformId)) {
+            return [];
+        }
         const jsonString: string | null = localStorage.getItem(this.BIOMETRIC_CREDENTIALS_KEY);
         if (!jsonString) {
             return [];
@@ -245,6 +252,9 @@ export abstract class JwtAuthService<
     }
 
     set biometricCredentials(value: BiometricCredentials[] | undefined) {
+        if (!isPlatformBrowser(this.platformId)) {
+            return;
+        }
         localStorage.setItem(this.BIOMETRIC_CREDENTIALS_KEY, JSON.stringify(value));
         if (!value) {
             localStorage.removeItem(this.BIOMETRIC_CREDENTIALS_KEY);
@@ -264,8 +274,14 @@ export abstract class JwtAuthService<
         protected readonly snackbar: MatSnackBar,
         protected readonly zone: NgZone,
         protected readonly router: Router,
-        protected readonly dialog: MatDialog
+        protected readonly dialog: MatDialog,
+        @Inject(PLATFORM_ID)
+        protected readonly platformId: Object
     ) {
+        if (!isPlatformBrowser(platformId)) {
+            this.authDataSubject = new BehaviorSubject<AuthDataType | undefined>(undefined);
+            return;
+        }
         const stringData: string | null = localStorage.getItem(this.AUTH_DATA_KEY);
         const authData: AuthDataType | undefined = stringData ? JSON.parse(stringData) as AuthDataType : undefined;
         this.authDataSubject = new BehaviorSubject(authData);
