@@ -211,7 +211,7 @@ export class NgxMatAuthConfirmResetPasswordComponent<
             form.resetForm();
             await this.router.navigateByUrl(this.routeAfterReset);
         }
-        catch (error) {
+        catch {
             form.resetForm();
             await this.router.navigateByUrl(this.routeAfterReset);
         }
