@@ -466,10 +466,11 @@ export abstract class JwtAuthService<
      * @returns Whether or not the user has one of the provided allowed roles.
      */
     hasRole(allowedRolesValues: RoleValue[]): boolean {
-        if (!this.authData) {
+        const data: AuthDataType | undefined = this.authData;
+        if (!data) {
             return false;
         }
-        return !!allowedRolesValues.find(rv => this.authData?.roles.map(r => r.value).includes(rv));
+        return !!allowedRolesValues.find(rv => data.roles.map(r => r.value).includes(rv));
     }
 
     /**

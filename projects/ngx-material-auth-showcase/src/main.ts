@@ -3,7 +3,6 @@
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { enableProdMode, inject } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, provideRouter } from '@angular/router';
 import { HttpErrorInterceptor, JwtInterceptor, NGX_AUTH_SERVICE, NGX_GUARD_CONFIG, NGX_JWT_INTERCEPTOR_ALLOWED_DOMAINS, NgxGuardConfig } from 'ngx-material-auth';
 
@@ -45,7 +44,6 @@ bootstrapApplication(
     {
         providers: [
             provideRouter(routes),
-            provideAnimations(),
             provideHttpClient(withInterceptorsFromDi()),
             {
                 provide: NGX_AUTH_SERVICE,

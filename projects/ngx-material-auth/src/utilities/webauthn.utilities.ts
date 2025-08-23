@@ -60,7 +60,7 @@ export abstract class WebauthnUtilities {
      * @returns The confirmed registration that needs to be sent to the backend.
      */
     static async startRegistration(options: PublicKeyCredentialCreationOptions): Promise<BiometricRegistrationResponse> {
-        return startRegistration(options);
+        return startRegistration({ optionsJSON: options });
     }
 
     /**
@@ -73,7 +73,10 @@ export abstract class WebauthnUtilities {
         options: PublicKeyCredentialRequestOptions,
         useBrowserAutofill?: boolean
     ): Promise<AuthenticationResponse> {
-        return startAuthentication(options, useBrowserAutofill);
+        return startAuthentication({
+            optionsJSON: options,
+            useBrowserAutofill
+        });
     }
 
     /**
