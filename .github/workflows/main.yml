@@ -14,11 +14,6 @@ jobs:
               run: |
                   cd $GITHUB_WORKSPACE
                   npm i
-            # runs npm i inside the ngx-material-auth directory
-            - name: npm i
-              run: |
-                  cd $GITHUB_WORKSPACE/projects/ngx-material-auth
-                  npm i
             # builds the library
             - name: build package
               run: |
