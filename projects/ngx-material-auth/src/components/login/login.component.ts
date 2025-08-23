@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, Inject, Input, OnInit } from '@angular/core';
 import { FormsModule, NgForm, NgModel } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -37,7 +36,6 @@ export interface ForgotPasswordLinkData {
     styleUrls: ['./login.component.scss'],
     standalone: true,
     imports: [
-        NgIf,
         FormsModule,
         MatFormFieldModule,
         RouterModule,

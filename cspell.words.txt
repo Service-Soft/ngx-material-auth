@@ -1,2 +1,4 @@
 webauthn
 simplewebauthn
+packagr
+qrcode
