@@ -1,88 +1,65 @@
 {
     "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
-    "version": 1,
-    "newProjectRoot": "projects",
-    "schematics": {
-        "@schematics/angular:component": {
-            "style": "scss"
-        }
+    "cli": {
+        "analytics": false
     },
+    "newProjectRoot": "projects",
     "projects": {
         "ngx-material-auth": {
-            "projectType": "library",
-            "root": "projects/ngx-material-auth",
-            "sourceRoot": "projects/ngx-material-auth/src",
-            "prefix": "lib",
             "architect": {
                 "build": {
                     "builder": "@angular-devkit/build-angular:ng-packagr",
-                    "options": {
-                        "project": "projects/ngx-material-auth/ng-package.json"
-                    },
                     "configurations": {
-                        "production": {
-                            "tsConfig": "projects/ngx-material-auth/tsconfig.lib.prod.json"
-                        },
                         "development": {
                             "tsConfig": "projects/ngx-material-auth/tsconfig.lib.json"
+                        },
+                        "production": {
+                            "tsConfig": "projects/ngx-material-auth/tsconfig.lib.prod.json"
                         }
                     },
-                    "defaultConfiguration": "production"
+                    "defaultConfiguration": "production",
+                    "options": {
+                        "project": "projects/ngx-material-auth/ng-package.json"
+                    }
                 },
                 "test": {
                     "builder": "@angular-devkit/build-angular:karma",
                     "options": {
+                        "karmaConfig": "projects/ngx-material-auth/karma.conf.js",
                         "main": "projects/ngx-material-auth/src/test.ts",
-                        "tsConfig": "projects/ngx-material-auth/tsconfig.spec.json",
-                        "karmaConfig": "projects/ngx-material-auth/karma.conf.js"
+                        "tsConfig": "projects/ngx-material-auth/tsconfig.spec.json"
                     }
                 }
-            }
+            },
+            "prefix": "lib",
+            "projectType": "library",
+            "root": "projects/ngx-material-auth",
+            "sourceRoot": "projects/ngx-material-auth/src"
         },
         "ngx-material-auth-showcase": {
-            "projectType": "application",
-            "schematics": {
-                "@schematics/angular:component": {
-                    "style": "scss"
-                },
-                "@schematics/angular:application": {
-                    "strict": true
-                }
-            },
-            "root": "projects/ngx-material-auth-showcase",
-            "sourceRoot": "projects/ngx-material-auth-showcase/src",
-            "prefix": "app",
             "architect": {
                 "build": {
                     "builder": "@angular-devkit/build-angular:browser",
-                    "options": {
-                        "outputPath": "dist/ngx-material-auth-showcase",
-                        "index": "projects/ngx-material-auth-showcase/src/index.html",
-                        "main": "projects/ngx-material-auth-showcase/src/main.ts",
-                        "polyfills": "projects/ngx-material-auth-showcase/src/polyfills.ts",
-                        "tsConfig": "projects/ngx-material-auth-showcase/tsconfig.app.json",
-                        "inlineStyleLanguage": "scss",
-                        "assets": [
-                            "projects/ngx-material-auth-showcase/src/favicon.ico",
-                            "projects/ngx-material-auth-showcase/src/assets"
-                        ],
-                        "styles": [
-                            "projects/ngx-material-auth-showcase/src/styles.scss"
-                        ],
-                        "scripts": []
-                    },
                     "configurations": {
+                        "development": {
+                            "buildOptimizer": false,
+                            "extractLicenses": false,
+                            "namedChunks": true,
+                            "optimization": false,
+                            "sourceMap": true,
+                            "vendorChunk": true
+                        },
                         "production": {
                             "budgets": [
                                 {
-                                    "type": "initial",
+                                    "maximumError": "1mb",
                                     "maximumWarning": "500kb",
-                                    "maximumError": "1mb"
+                                    "type": "initial"
                                 },
                                 {
-                                    "type": "anyComponentStyle",
+                                    "maximumError": "4kb",
                                     "maximumWarning": "2kb",
-                                    "maximumError": "4kb"
+                                    "type": "anyComponentStyle"
                                 }
                             ],
                             "fileReplacements": [
@@ -92,59 +69,80 @@
                                 }
                             ],
                             "outputHashing": "all"
-                        },
-                        "development": {
-                            "buildOptimizer": false,
-                            "optimization": false,
-                            "vendorChunk": true,
-                            "extractLicenses": false,
-                            "sourceMap": true,
-                            "namedChunks": true
                         }
                     },
-                    "defaultConfiguration": "production"
-                },
-                "serve": {
-                    "builder": "@angular-devkit/build-angular:dev-server",
-                    "configurations": {
-                        "production": {
-                            "browserTarget": "ngx-material-auth-showcase:build:production"
-                        },
-                        "development": {
-                            "browserTarget": "ngx-material-auth-showcase:build:development"
-                        }
-                    },
-                    "defaultConfiguration": "development"
-                },
-                "extract-i18n": {
-                    "builder": "@angular-devkit/build-angular:extract-i18n",
+                    "defaultConfiguration": "production",
                     "options": {
-                        "browserTarget": "ngx-material-auth-showcase:build"
-                    }
-                },
-                "test": {
-                    "builder": "@angular-devkit/build-angular:karma",
-                    "options": {
-                        "main": "projects/ngx-material-auth-showcase/src/test.ts",
-                        "polyfills": "projects/ngx-material-auth-showcase/src/polyfills.ts",
-                        "tsConfig": "projects/ngx-material-auth-showcase/tsconfig.spec.json",
-                        "karmaConfig": "projects/ngx-material-auth-showcase/karma.conf.js",
-                        "inlineStyleLanguage": "scss",
                         "assets": [
                             "projects/ngx-material-auth-showcase/src/favicon.ico",
                             "projects/ngx-material-auth-showcase/src/assets"
                         ],
+                        "index": "projects/ngx-material-auth-showcase/src/index.html",
+                        "inlineStyleLanguage": "scss",
+                        "main": "projects/ngx-material-auth-showcase/src/main.ts",
+                        "outputPath": "dist/ngx-material-auth-showcase",
+                        "polyfills": "projects/ngx-material-auth-showcase/src/polyfills.ts",
+                        "scripts": [],
+                        "styles": ["projects/ngx-material-auth-showcase/src/styles.scss"],
+                        "tsConfig": "projects/ngx-material-auth-showcase/tsconfig.app.json"
+                    }
+                },
+                "extract-i18n": {
+                    "builder": "@angular-devkit/build-angular:extract-i18n",
+                    "options": {
+                        "buildTarget": "ngx-material-auth-showcase:build"
+                    }
+                },
+                "serve": {
+                    "builder": "@angular-devkit/build-angular:dev-server",
+                    "configurations": {
+                        "development": {
+                            "buildTarget": "ngx-material-auth-showcase:build:development"
+                        },
+                        "production": {
+                            "buildTarget": "ngx-material-auth-showcase:build:production"
+                        }
+                    },
+                    "defaultConfiguration": "development"
+                },
+                "test": {
+                    "builder": "@angular-devkit/build-angular:karma",
+                    "options": {
+                        "assets": [
+                            "projects/ngx-material-auth-showcase/src/favicon.ico",
+                            "projects/ngx-material-auth-showcase/src/assets"
+                        ],
+                        "inlineStyleLanguage": "scss",
+                        "karmaConfig": "projects/ngx-material-auth-showcase/karma.conf.js",
+                        "main": "projects/ngx-material-auth-showcase/src/test.ts",
+                        "polyfills": "projects/ngx-material-auth-showcase/src/polyfills.ts",
+                        "scripts": [],
                         "styles": [
                             "./node_modules/@angular/material/prebuilt-themes/indigo-pink.css",
                             "projects/ngx-material-auth-showcase/src/styles.scss"
                         ],
-                        "scripts": []
+                        "tsConfig": "projects/ngx-material-auth-showcase/tsconfig.spec.json"
                     }
                 }
-            }
+            },
+            "prefix": "app",
+            "projectType": "application",
+            "root": "projects/ngx-material-auth-showcase",
+            "schematics": {
+                "@schematics/angular:application": {
+                    "strict": true
+                },
+                "@schematics/angular:component": {
+                    "style": "scss"
+                }
+            },
+            "sourceRoot": "projects/ngx-material-auth-showcase/src"
         }
     },
-    "cli": {
-        "analytics": false
-    }
+    "schematics": {
+        "@schematics/angular:component": {
+            "style": "scss"
+        }
+    },
+    "version": 1
 }

@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, Inject, Input, OnInit } from '@angular/core';
 import { FormsModule, NgForm, NgModel } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,7 +20,6 @@ import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-messag
     styleUrls: ['./request-reset-password.component.scss'],
     standalone: true,
     imports: [
-        NgIf,
         FormsModule,
         MatFormFieldModule,
         MatInputModule,
