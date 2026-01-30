@@ -4,6 +4,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Router, RouterModule } from '@angular/router';
+import { FaIconComponent, IconDefinition } from '@fortawesome/angular-fontawesome';
+import { faCircleUser, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 
 import { BaseAuthData } from '../../models/base-auth-data.model';
 import { BaseRole } from '../../models/base-role.model';
@@ -40,7 +42,8 @@ export interface ForgotPasswordLinkData {
         MatFormFieldModule,
         RouterModule,
         MatInputModule,
-        MatButtonModule
+        MatButtonModule,
+        FaIconComponent
     ]
 })
 export class NgxMatAuthLoginComponent<
@@ -123,6 +126,13 @@ export class NgxMatAuthLoginComponent<
      * Whether or not the password input is hidden.
      */
     hide: boolean = true;
+
+    // eslint-disable-next-line jsdoc/require-jsdoc
+    faCircleUser: IconDefinition = faCircleUser;
+    // eslint-disable-next-line jsdoc/require-jsdoc
+    faEye: IconDefinition = faEye;
+    // eslint-disable-next-line jsdoc/require-jsdoc
+    faEyeSlash: IconDefinition = faEyeSlash;
 
     constructor(
         @Inject(NGX_AUTH_SERVICE)

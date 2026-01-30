@@ -5,6 +5,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FaIconComponent, IconDefinition } from '@fortawesome/angular-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { firstValueFrom } from 'rxjs';
 
 import { BaseAuthData } from '../../models/base-auth-data.model';
@@ -33,7 +35,8 @@ import { NGX_GET_VALIDATION_ERROR_MESSAGE } from '../get-validation-error-messag
         FormsModule,
         MatInputModule,
         MatFormFieldModule,
-        MatButtonModule
+        MatButtonModule,
+        FaIconComponent
     ]
 })
 export class NgxMatAuthConfirmResetPasswordComponent<
@@ -131,6 +134,11 @@ export class NgxMatAuthConfirmResetPasswordComponent<
      * Whether or not the confirm password input is hidden.
      */
     hideConfirm: boolean = true;
+
+    // eslint-disable-next-line jsdoc/require-jsdoc
+    faEye: IconDefinition = faEye;
+    // eslint-disable-next-line jsdoc/require-jsdoc
+    faEyeSlash: IconDefinition = faEyeSlash;
 
     private resetToken?: string;
 

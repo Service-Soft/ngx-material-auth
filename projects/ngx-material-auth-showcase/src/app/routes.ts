@@ -36,7 +36,7 @@ export const navbarRows: NavbarRow[] = [
             },
             {
                 type: NavElementTypes.MENU,
-                icon: faLock,
+                iconState: faLock,
                 name: 'Restricted Routes',
                 collapse: 'sm',
                 elements: [

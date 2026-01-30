@@ -1,14 +1,18 @@
 {
     "name": "ngx-material-auth",
-    "version": "20.0.0",
+    "version": "20.0.1",
     "license": "MIT",
+    "repository": {
+        "url": "https://github.com/Service-Soft/ngx-material-auth"
+    },
     "keywords": [
         "angular",
         "material",
         "authentication",
         "authorization",
         "login",
-        "jwt"
+        "jwt",
+        "2fa"
     ],
     "peerDependencies": {
         "@angular/animations": "20",
@@ -17,6 +21,8 @@
         "@angular/core": "20",
         "@angular/forms": "20",
         "@angular/material": "20",
+        "@fortawesome/angular-fontawesome": "^3",
+        "@fortawesome/free-solid-svg-icons": "^7",
         "qrcode": "^1.5.4",
         "@simplewebauthn/browser": "^13.1.2",
         "@simplewebauthn/types": "^12.0.0"
