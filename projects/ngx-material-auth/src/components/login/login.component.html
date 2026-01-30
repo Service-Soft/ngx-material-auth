@@ -1,6 +1,6 @@
 <!-- eslint-disable angular/no-call-expression -->
 <div class="mat-elevation-z8 login-box">
-    <i class="title-icon fas fa-circle-user"></i>
+    <fa-icon class="title-icon" [icon]="faCircleUser"></fa-icon>
     <h1>{{loginTitle}}</h1>
 
     <form #formControl="ngForm" (ngSubmit)="onSubmit(formControl)">
@@ -20,7 +20,7 @@
                 [type]="hide ? 'password' : 'text'"
                 [(ngModel)]="password">
             <button class="hide-password" type="button" mat-icon-button matSuffix (click)="$event.stopPropagation(); hide = !hide">
-                <i class="fas" [class.fa-eye-slash]="hide" [class.fa-eye]="!hide"></i>
+                <fa-icon style="line-height: 1;" [icon]="hide ? faEyeSlash : faEye"></fa-icon>
             </button>
             <mat-error>{{getValidationErrorMessage(pw)}}</mat-error>
         </mat-form-field>
