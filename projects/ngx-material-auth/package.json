@@ -1,6 +1,6 @@
 {
     "name": "ngx-material-auth",
-    "version": "20.0.1",
+    "version": "20.0.2",
     "license": "MIT",
     "repository": {
         "url": "https://github.com/Service-Soft/ngx-material-auth"
@@ -15,7 +15,6 @@
         "2fa"
     ],
     "peerDependencies": {
-        "@angular/animations": "20",
         "@angular/cdk": "20",
         "@angular/common": "20",
         "@angular/core": "20",
